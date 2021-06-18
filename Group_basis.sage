@@ -67,5 +67,42 @@ else:
 	print("Test 3: failure")
 
 #Test 4: in bigger groups
+G1=CyclicPermutationGroup(5)
+G2=CyclicPermutationGroup(5^2)
+g1=G1.gen()
+e1=G1.one()
+g2=G2.gen()
+e2=G2.one()
+G=cartesian_product([G1,G2])
+B=[G((g1,e2)),G((e1,g2^5))]#g2^5 keeps exponent 5
+h=G((G1.random_element(),G2.random_element()^5))
+k=DL_exhaust(B,h,5,2)
+if B[0]^(k[0])*B[1]^(k[1])==h:
+	print("Test 4: success")
+else:
+	print("Test 4: failure")
+
+#Test 5: raise an exception for r=1
+G=CyclicPermutationGroup(23^2)
+g=G.gen()
+h=g^21
+try :
+	DL_exhaust([g^23],h,23,1)
+	print("Test 5: failure")
+except ValueError:
+	print("Test 5: success")
+
+#Test 6: raise an exception for r=2
+G1=CyclicPermutationGroup(23^2)
+g0=G1.gen()
+e=G1.one()
+G=cartesian_product([G1,G1])
+B=[G((g0^23,e)),G((e,g0^23))]
+h=G((g0^17,g0^25))
+try :
+	DL_exhaust(B,h,23,2)
+	print("Test 6: failure")
+except ValueError:
+	print("Test 6: success")
 
 
