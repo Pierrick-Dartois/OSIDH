@@ -1,6 +1,6 @@
 def f():
 	return 1+1
 
-f()
+print(f())
 import numpy as np
-f()+np.e
+print(f()+np.e)
