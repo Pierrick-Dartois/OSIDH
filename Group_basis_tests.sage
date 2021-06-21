@@ -92,6 +92,7 @@ if B[0]^(k[0])*B[1]^(k[1])==h:
 else:
 	print("Test 7: failure")
 
+
 ##DL_PH
 print("Testing DL_PH")
 
