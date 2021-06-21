@@ -81,3 +81,80 @@ def DL_PH(e,B,h,p,r):
 		X_ret[L_perm[i]]=X[i]
 	return X_ret
 
+
+### Basis of a p-group
+def Basis(e,S,p):
+	t=len(S)
+	S1=S.copy()
+	B=[]
+	E_B=[]#log_p(orders) of B
+	E=[0]*t#log_p(orders) of S
+	for i in range(t):
+		gi=B[i]
+		while gi!=e:
+			E[i]+=1
+			gi=gi**p
+	E_max=max(E)
+
+	# Adding first element in B
+	if E_max==0:
+		return B
+	else:
+		i0=E.index(E_max)
+		B.append(S1[i0])
+		E_B.append(E_max)
+		del S1[i0]
+		del E[i0]
+		t=t-1
+
+	# Main loop with orthogonalization process
+	while t>0:
+		r=len(B)
+		S_update=[]
+		E_update=[]
+		for i in range(t):
+			if E[i]>0:
+				b_continue=True
+				e_i=0
+				C=B.copy()
+				hi=S1[i]
+				while b_continue and e_i<E[i]:
+					ri=0
+					while ri<r and E_B[ri]>=e_i+1:
+						ri+=1
+					try:
+						Xi=DL_PH(e,C[0:ri],hi,p,ri)
+						b_continue=False
+					except:
+						C=[c**p for c in C]
+						hi=hi**p
+						e_i+=1
+				s=S1[i]
+				for j in range(r):
+					s*=B[j]^(-Xi[j])
+				S_update.append(s)
+				E_update.append(e_i)
+		E=E_update.copy()
+		S1=S_update.copy()
+		if len(E)==0:
+			return B
+		else:
+			E_max=max(E)
+			if E_max==0:
+				return B
+			else:
+				i0=E.index(E_max)
+				B.append(S1[i0])
+				E_B.append(E_max)
+				del S1[i0]
+				del E[i0]
+				t=len(S1)
+	return B
+
+
+
+
+
+
+
+
