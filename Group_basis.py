@@ -5,7 +5,7 @@ def DL_exhaust(e,B,h,p,r):
 	if r==1:
 		g0=B[0]
 		if g0==h:
-			return [1];
+			return [1]
 		g=e
 		k=0
 		while g!=h and k<p:
@@ -19,6 +19,9 @@ def DL_exhaust(e,B,h,p,r):
 		g=h
 		C=B[0:r-1]
 		gr=B[r-1]
+		if gr==e:
+			dl=DL_exhaust(e,C,g,p,r-1)
+			return dl+[1]
 		k=0
 		while k<p:
 			try:
