@@ -1,3 +1,6 @@
+from sage.matrix.constructor import matrix
+from sage.matrix.special import block_matrix
+
 ### Discrete logarithm
 
 ## Echaustive search discrete logarithm in a p-group of exponent p
@@ -187,7 +190,18 @@ def IsBasis(e,B,C,p):
 			return False
 	return True
 
-
+### Get relations from a basis
+## Returns the basis of the lattice of vectors e such that M_i e \equiv B_i for all i
+def Lattice_basis(M,B):
+	r=len(B)
+	L_A=[]
+	for i in range(r):
+		Ai=block_matrix([[matrix(M[i])],[B[i]]])
+		# Here, the generator vectors are the lines and not the columns (because of HNF)
+		L_A.append(Ai.hermite_form())
+	A=block_matrix([[1/B[i]*L_A[i]] for i in range(r)])
+	A1=A.hermite_form()
+	return A1[0:r,0:r].inverse()
 
 
 

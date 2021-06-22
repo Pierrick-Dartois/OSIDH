@@ -223,3 +223,11 @@ else:
 	print("Test 6: failure")
 
 
+## Lattice basis
+print("Testing lattice basis")
+
+# Test 1 :
+M=random_matrix(ZZ,5,10)
+B=[3^(i+1)for i in range(5)]
+print(Lattice_basis(M,B))
+
