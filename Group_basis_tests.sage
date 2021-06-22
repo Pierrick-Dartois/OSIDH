@@ -148,31 +148,78 @@ else:
 
 
 ## Basis
+print("Testing Basis: the tests are probabilistic so they may fail. \n See test 6 for statistical testing")
 
 # Test 1 : r=2, t=3
 G=AbelianGroup([3^2,3^3])
 e=G.one()
-S=[G.random_element(),G.random_element(),G.random_element()]
-B=Basis(e,S,3)
-print(B)
+S=[G.random_element() for i in range(3)]
+B=list(G.gens())
+C=Basis_p(e,S,3)
+if IsBasis(e,B,C,3):
+	print("Test 1: success")
+else:
+	print("Test 1: failure")
 
 # Test 2: r=5, t=10
 G=AbelianGroup([3^7,3^2,3^5,3^4,3^8])
 e=G.one()
 S=[G.random_element() for i in range(10)]
-B=Basis(e,S,3)
-print(B)
+B=list(G.gens())
+C=Basis_p(e,S,3)
+if IsBasis(e,B,C,3):
+	print("Test 2: success")
+else:
+	print("Test 2: failure")
 
 # Test 3: r=1, t=1
 G=AbelianGroup([3^7])
 e=G.one()
 S=[G.random_element()]
-B=Basis(e,S,3)
-print(B)
+B=list(G.gens())
+C=Basis_p(e,S,3)
+if IsBasis(e,B,C,3):
+	print("Test 3: success")
+else:
+	print("Test 3: failure")
 
 # Test 4: r=1, t=2
 G=AbelianGroup([3^7])
 e=G.one()
 S=[G.random_element(),G.random_element()]
-B=Basis(e,S,3)
-print(B)
+B=list(G.gens())
+C=Basis_p(e,S,3)
+if IsBasis(e,B,C,3):
+	print("Test 4: success")
+else:
+	print("Test 4: failure")
+
+# Test 5 : Realistic test for ideal class groups : p=2, r=2 big cyclic factor * Z/2Z
+G=AbelianGroup([2^100,2])
+e=G.one()
+S=[G.random_element() for i in range(50)]
+B=list(G.gens())
+C=Basis_p(e,S,2)
+if IsBasis(e,B,C,2):
+	print("Test 5: success")
+else:
+	print("Test 5: failure")
+
+# Test 6 : Statistical test, to see if we get a basis when the initial set is a basis
+p=5
+n=10
+G=AbelianGroup([p^n,p^n])
+e=G.one()
+B=list(G.gens())
+b_test=True
+for i in range(1000):
+	S=[G.random_element() for i in range(1)]
+	C=Basis_p(e,S,p)
+	if IsBasis(e,B,C,p)!=IsBasis(e,B,S,p):
+		b_test=False
+if b_test:
+	print("Test 6: success")
+else:
+	print("Test 6: failure")
+
+
