@@ -145,3 +145,34 @@ if res==h:
 	print("Test 4: success")
 else:
 	print("Test 4: failure")
+
+
+## Basis
+
+# Test 1 : r=2, t=3
+G=AbelianGroup([3^2,3^3])
+e=G.one()
+S=[G.random_element(),G.random_element(),G.random_element()]
+B=Basis(e,S,3)
+print(B)
+
+# Test 2: r=5, t=10
+G=AbelianGroup([3^7,3^2,3^5,3^4,3^8])
+e=G.one()
+S=[G.random_element() for i in range(10)]
+B=Basis(e,S,3)
+print(B)
+
+# Test 3: r=1, t=1
+G=AbelianGroup([3^7])
+e=G.one()
+S=[G.random_element()]
+B=Basis(e,S,3)
+print(B)
+
+# Test 4: r=1, t=2
+G=AbelianGroup([3^7])
+e=G.one()
+S=[G.random_element(),G.random_element()]
+B=Basis(e,S,3)
+print(B)

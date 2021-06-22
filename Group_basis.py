@@ -90,7 +90,7 @@ def Basis(e,S,p):
 	E_B=[]#log_p(orders) of B
 	E=[0]*t#log_p(orders) of S
 	for i in range(t):
-		gi=B[i]
+		gi=S1[i]
 		while gi!=e:
 			E[i]+=1
 			gi=gi**p
@@ -130,12 +130,14 @@ def Basis(e,S,p):
 						hi=hi**p
 						e_i+=1
 				s=S1[i]
-				for j in range(r):
-					s*=B[j]^(-Xi[j])
+				if e_i<E[i]:
+					for j in range(ri):
+						s*=B[j]**(-Xi[j])
 				S_update.append(s)
 				E_update.append(e_i)
 		E=E_update.copy()
 		S1=S_update.copy()
+		# Updating S and B as previously
 		if len(E)==0:
 			return B
 		else:
