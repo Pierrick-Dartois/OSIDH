@@ -325,8 +325,3 @@ def IsGoodLatticeBasis(B,M,b):
 				return False
 	return True
 
-
-
-
-
-
