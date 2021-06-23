@@ -4,7 +4,8 @@ from Group_basis import *
 
 ##Discrete logarithm
 #DL_exhaust
-print("Testing DL_exhaust")
+print("Testing DL_exhaust (test 7 may raise a ValueError)")
+
 #Test 1: A simple cyclic group
 G=CyclicPermutationGroup(23)
 g=G.gen()
@@ -148,7 +149,9 @@ else:
 
 
 ## Basis
-print("Testing Basis: the tests are probabilistic so they may fail. \n See test 6 for statistical testing")
+print("Testing Basis: the tests are probabilistic so they may fail."
+	+"\n See test 6 for multiple testing taking into account"+
+	"\n this probability of failure (should succeed).")
 
 # Test 1 : r=2, t=3
 G=AbelianGroup([3^2,3^3])
@@ -226,8 +229,31 @@ else:
 ## Lattice basis
 print("Testing lattice basis")
 
-# Test 1 :
+# Test 1 : an example
 M=random_matrix(ZZ,5,10)
-B=[3^(i+1)for i in range(5)]
-print(Lattice_basis(M,B))
+b=[3^(i+1)for i in range(5)]
+B=Lattice_basis(M,b)
+if IsGoodLatticeBasis(B,M,b):
+	print("Test 1: success")
+else:
+	print("Test 1: failure")
+
+# Test 2 : multiple examples
+b_test=True
+for i in range(100):
+	r=randint(1,5)
+	t=randint(2*r,30)
+	M=random_matrix(ZZ,r,t)
+	p=random_prime(100)
+	q=random_prime(100)
+	b=[p^(randint(0,r))*q^(randint(0,r)) for i in range(r)]
+	B=Lattice_basis(M,b)
+	if not IsGoodLatticeBasis(B,M,b):
+		b_test=False
+if b_test:
+	print("Test 2: success")
+else:
+	print("Test 2: failure")
+
+
 

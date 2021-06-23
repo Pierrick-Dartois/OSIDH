@@ -1,5 +1,6 @@
 from sage.matrix.constructor import matrix
 from sage.matrix.special import block_matrix
+from sage.arith.all import lcm
 
 ### Discrete logarithm
 
@@ -85,9 +86,9 @@ def DL_PH(e,B,h,p,r):
 	return X_ret
 
 
-### Basis of a p-group
+### Basis of a group
 
-## Main function
+## Basis of a p-group
 def Basis_p(e,S,p):
 	t=len(S)
 	S1=S.copy()
@@ -159,7 +160,7 @@ def Basis_p(e,S,p):
 	return B
 
 
-## Testing function
+## Testing function for Basis_p
 def IsBasis(e,B,C,p):
 	r=len(B)
 	if len(C)!=r:
@@ -190,18 +191,43 @@ def IsBasis(e,B,C,p):
 			return False
 	return True
 
+
+## 
+
+
+
 ### Get relations from a basis
+
 ## Returns the basis of the lattice of vectors e such that M_i e \equiv B_i for all i
-def Lattice_basis(M,B):
-	r=len(B)
+def Lattice_basis(M,b):
+	r=len(b)
+	t=M.ncols()
 	L_A=[]
 	for i in range(r):
-		Ai=block_matrix([[matrix(M[i])],[B[i]]])
+		Ai=block_matrix([[matrix(M[i])],[b[i]]])
 		# Here, the generator vectors are the lines and not the columns (because of HNF)
-		L_A.append(Ai.hermite_form())
-	A=block_matrix([[1/B[i]*L_A[i]] for i in range(r)])
+		L_A.append(Ai)
+	m=lcm(b)
+	A=block_matrix([[(m//b[i])*L_A[i]] for i in range(r)])
 	A1=A.hermite_form()
-	return A1[0:r,0:r].inverse()
+	return m*A1[0:t,0:t].inverse()
+
+
+## Testing function for Lattice_basis
+def IsGoodLatticeBasis(B,M,b):
+	r=len(b)
+	t=M.ncols()
+	m=1
+	for i in range(r):
+		m*=b[i]
+	if m!=B.det():
+		return False
+	C=M*B
+	for i in range(r):
+		for j in range(t):
+			if C[i,j]%b[i]!=0:
+				return False
+	return True
 
 
 
