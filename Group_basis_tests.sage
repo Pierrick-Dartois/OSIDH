@@ -148,8 +148,8 @@ else:
 	print("Test 4: failure")
 
 
-## Basis
-print("Testing Basis: the tests are probabilistic so they may fail."
+## Basis_p
+print("Testing Basis_p: the tests are probabilistic so they may fail."
 	+"\n See test 6 for multiple testing taking into account"+
 	"\n this probability of failure (should succeed).")
 
@@ -158,8 +158,8 @@ G=AbelianGroup([3^2,3^3])
 e=G.one()
 S=[G.random_element() for i in range(3)]
 B=list(G.gens())
-C=Basis_p(e,S,3)
-if IsBasis(e,B,C,3):
+C,E_C=Basis_p(e,S,3)
+if IsBasis(e,B,C,E_C,3):
 	print("Test 1: success")
 else:
 	print("Test 1: failure")
@@ -169,8 +169,8 @@ G=AbelianGroup([3^7,3^2,3^5,3^4,3^8])
 e=G.one()
 S=[G.random_element() for i in range(10)]
 B=list(G.gens())
-C=Basis_p(e,S,3)
-if IsBasis(e,B,C,3):
+C,E_C=Basis_p(e,S,3)
+if IsBasis(e,B,C,E_C,3):
 	print("Test 2: success")
 else:
 	print("Test 2: failure")
@@ -180,8 +180,8 @@ G=AbelianGroup([3^7])
 e=G.one()
 S=[G.random_element()]
 B=list(G.gens())
-C=Basis_p(e,S,3)
-if IsBasis(e,B,C,3):
+C,E_C=Basis_p(e,S,3)
+if IsBasis(e,B,C,E_C,3):
 	print("Test 3: success")
 else:
 	print("Test 3: failure")
@@ -191,8 +191,8 @@ G=AbelianGroup([3^7])
 e=G.one()
 S=[G.random_element(),G.random_element()]
 B=list(G.gens())
-C=Basis_p(e,S,3)
-if IsBasis(e,B,C,3):
+C,E_C=Basis_p(e,S,3)
+if IsBasis(e,B,C,E_C,3):
 	print("Test 4: success")
 else:
 	print("Test 4: failure")
@@ -202,8 +202,8 @@ G=AbelianGroup([2^100,2])
 e=G.one()
 S=[G.random_element() for i in range(50)]
 B=list(G.gens())
-C=Basis_p(e,S,2)
-if IsBasis(e,B,C,2):
+C,E_C=Basis_p(e,S,2)
+if IsBasis(e,B,C,E_C,2):
 	print("Test 5: success")
 else:
 	print("Test 5: failure")
@@ -215,16 +215,30 @@ G=AbelianGroup([p^n,p^n])
 e=G.one()
 B=list(G.gens())
 b_test=True
-for i in range(1000):
-	S=[G.random_element() for i in range(1)]
-	C=Basis_p(e,S,p)
-	if IsBasis(e,B,C,p)!=IsBasis(e,B,S,p):
+for i in range(100):
+	S=[G.random_element() for i in range(2)]
+	C,E_C=Basis_p(e,S,p)
+	if IsBasis(e,B,C,E_C,p)!=IsBasis2(e,B,S,p):
 		b_test=False
 if b_test:
 	print("Test 6: success")
 else:
 	print("Test 6: failure")
 
+## Basis
+print("Testing Basis")
+
+# Test 1 :
+G=AbelianGroup([2^20,2^5,3^25,3^50,5^6])
+e=G.one()
+S=[G.random_element() for i in range(50)]
+N=2^20*2^5*3^25*3^50*5^6
+L_factors=[(2,25),(3,75),(5,6)]
+B,L_orders=Basis(e,S,N,L_factors)
+if L_orders==[(2,20),(2,5),(3,50),(3,25),(5,6)]:
+	print("Test 1: success")
+else:
+	print("Test 1: failure")
 
 ## Lattice basis
 print("Testing lattice basis")
