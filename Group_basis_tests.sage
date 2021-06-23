@@ -225,10 +225,11 @@ if b_test:
 else:
 	print("Test 6: failure")
 
+
 ## Basis
 print("Testing Basis")
 
-# Test 1 :
+# Test 1:
 G=AbelianGroup([2^20,2^5,3^25,3^50,5^6])
 e=G.one()
 S=[G.random_element() for i in range(50)]
@@ -240,12 +241,23 @@ if L_orders==[(2,20),(2,5),(3,50),(3,25),(5,6)]:
 else:
 	print("Test 1: failure")
 
+
+## DL_matrix
+print("Testing DL_matrix")
+
+# Test 1: uses Test 1 of Basis
+M=DL_matrix(e,S,B,L_orders)
+if IsGoodDL_matrix(e,B,M,S):
+	print("Test 1: success")
+else:
+	print("Test 1: failure")
+
+
 ## Lattice basis
 print("Testing lattice basis")
 
-# Test 1 : an example
-M=random_matrix(ZZ,5,10)
-b=[3^(i+1)for i in range(5)]
+# Test 1 : on the group of test 1 of Basis
+b=[x[0]^x[1] for x in L_orders]
 B=Lattice_basis(M,b)
 if IsGoodLatticeBasis(B,M,b):
 	print("Test 1: success")

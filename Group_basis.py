@@ -1,6 +1,7 @@
 from sage.matrix.constructor import matrix
 from sage.matrix.special import block_matrix
 from sage.arith.all import lcm
+from sage.rings.all import ZZ
 
 ### Discrete logarithm
 
@@ -88,7 +89,7 @@ def DL_PH(e,B,h,p,r):
 
 ### Basis of a group
 
-## Basis of a p-group
+## Basis of a p-group (returns also the list of log_p(orders))
 def Basis_p(e,S,p):
 	t=len(S)
 	S1=S.copy()
@@ -223,7 +224,7 @@ def IsBasis2(e,B,C,p):
 			return False
 	return True
 
-## Basis adapted to the decompostion in p-Sylows
+## Basis adapted to the decompostion into p-Sylows
 
 def Basis(e,S,N,L_factors):
 	s=len(L_factors)
@@ -238,7 +239,60 @@ def Basis(e,S,N,L_factors):
 		L_orders+=[(pi,ei) for ei in E_Bi]
 	return B,L_orders
 
+
 ### Get relations from a basis
+
+## Returns the matrix of discrete logarithms of a set in a basis
+def DL_matrix(e,S,B,L_orders):
+	# Recomputes the list L_factors with L_orders 
+	L_index_p=[0]
+	p=L_orders[0][0]
+	L_p=[p]
+	L_alphap=[L_orders[0][1]]
+	r=len(L_orders)
+	for i in range(r):
+		if L_orders[i][0]!=p:
+			p=L_orders[i][0]
+			L_index_p.append(i)
+			L_p.append(p)
+			L_alphap.append(L_orders[i][1])
+		else:
+			L_alphap[-1]+=L_orders[i][1]
+	L_index_p.append(r)
+
+	s=len(L_p)
+	t=len(S)
+	N=1
+	M=[[] for j in range(t)]
+	for i in range(s):
+		N*=L_p[i]**L_alphap[i]
+
+	# Main loop with discrete logarithm
+	for i in range(s):
+		Ni=N//L_p[i]**L_alphap[i]
+		ri=L_index_p[i+1]-L_index_p[i]
+		Bi=[B[k]**Ni for k in range(L_index_p[i],L_index_p[i+1])]
+		for j in range(t):
+			sij=S[j]**Ni
+			M[j]+=DL_PH(e,Bi,sij,L_p[i],ri)
+	return matrix(ZZ,M).transpose()
+
+
+## Testing function for DL_matrix
+def IsGoodDL_matrix(e,B,M,S):
+	r=len(B)
+	t=len(S)
+	if M.nrows()!=r or M.ncols()!=t:
+		return False
+
+	for j in range(t):
+		gj=e
+		for i in range(r):
+			gj*=B[i]**M[i,j]
+		if gj!=S[j]:
+			return False
+	return True
+
 
 ## Returns the basis of the lattice of vectors e such that M_i e \equiv B_i for all i
 def Lattice_basis(M,b):
