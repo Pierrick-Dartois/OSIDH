@@ -24,7 +24,7 @@ class IdealClass:
 			d,p=args# p shoud be a prime but it is not tested because it is costly
 			if d>=0 or d%4 not in [0,1]:
 				raise ValueError('The discriminant should be negative and congruent to 0 or 1 mod 4')
-			elif Mod(d,p).is_square():
+			elif Mod(d,4*p).is_square():
 				R=Integers(4*p)
 				b=ZZ(R(d).sqrt())
 				a=p
@@ -85,7 +85,7 @@ class IdealClass:
 		self.a,self.b,self.c=a,b,c
 
 	def __str__(self):
-		return "{0}*x^2 + {1}*x*y + {2}*y^2".format(self.a,self.b,self.c)
+		return "{0}*x^2+{1}*x*y+{2}*y^2".format(self.a,self.b,self.c)
 
 	def __eq__(self,q):
 		return self.a==q.a and self.b==q.b and self.c==q.c
@@ -129,7 +129,7 @@ class IdealClass:
 
 	def __pow__(self,k):
 		l=max(-k,k)
-		L=l.digits(2)
+		L=ZZ(l).digits(2)
 		n=len(L)
 		q=IdealClass(self.disc)
 		for i in range(n):
