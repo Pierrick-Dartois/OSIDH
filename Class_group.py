@@ -128,7 +128,10 @@ class IdealClass:
 				q=q*q
 			else:
 				q=(q*q)*self
-		return q
+		if k>=0:
+			return q
+		else:
+			return q.inverse()
 
 
 	
