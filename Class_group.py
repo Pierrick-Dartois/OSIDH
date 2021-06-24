@@ -87,6 +87,7 @@ class IdealClass:
 	def __ne__(self,q):
 		return not self.__eq__(q)
 
+	# Implementing Dirichlet composition
 	def __mul__(self,q):
 		if self.disc!=q.disc:
 			raise ValueError('The ideals are in distinct orders')
@@ -94,7 +95,7 @@ class IdealClass:
 			a1=q.a
 			b1=q.b
 			c1=q.c
-			if gcd([self.a,a1,(self.b+b1)//2])!=1:
+			if gcd([self.a,a1,(self.b+b1)//2])!=1:# Condition for Dirichlet composition to work
 				a1,c1=c1,a1
 				b1=-b1
 				if gcd([self.a,a1,(self.b+b1)//2])!=1:
