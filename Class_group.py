@@ -1,8 +1,11 @@
 from sage.quadratic_forms.binary_qf import BinaryQF
 from sage.rings.all import Integers, ZZ
 from sage.arith.all import gcd
-from sage.functions.other import ceil
+from sage.arith.misc import xgcd
+from sage.functions.other import ceil,sqrt
+from sage.functions.log import log
 from sage.rings.finite_rings.integer_mod import Mod
+from sage.misc.prandom import randint
 
 class IdealClass:
 	def __init__(self,*args):
@@ -24,11 +27,14 @@ class IdealClass:
 			elif Mod(d,p).is_square():
 				R=Integers(4*p)
 				b=ZZ(R(d).sqrt())
-				self.a=p
-				self.b=b
-				self.c=(b*b-d)//(4*p)
-				self.disc=d
-				self.reduce()
+				a=p
+				c=(b*b-d)//(4*p)
+				if gcd([a,b,c])!=1:
+					raise ValueError('There is no proper ideal above this prime')
+				else:
+					self.a,self.b,self.c=a,b,c
+					self.disc=d
+					self.reduce()
 			elif d%4==0:
 				self.a=1
 				self.b=0
@@ -96,13 +102,15 @@ class IdealClass:
 			b1=q.b
 			c1=q.c
 			if gcd([self.a,a1,(self.b+b1)//2])!=1:# Condition for Dirichlet composition to work
-				a1,c1=c1,a1
-				b1=-b1
-				if gcd([self.a,a1,(self.b+b1)//2])!=1:
-					c1=a1+b1+c1
-					b1=b1+2*a1
-					a1,c1=c1,a1
-					b1=-b1
+				m=ceil(100*log(-self.disc))
+				while gcd([self.a,a1,(self.b+b1)//2])!=1:
+					u=randint(-m,m)
+					v=randint(-m,m)
+					while gcd(u,v)!=1:
+						u=randint(-m,m)
+						v=randint(-m,m)
+					s,t=xgcd(u,v)[1:]
+					a1,b1,c1=a1*u*u-b1*t*u+t*t*c1,2*u*v*a1+b1*(u*s-t*v)-2*s*t*c1,a1*v*v+b1*v*s+c1*s*s
 			R=Integers(4*self.a*a1)
 			L_B=R(self.disc).sqrt(all=True)
 			L_B=[ZZ(x) for x in L_B]
