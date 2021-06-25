@@ -1,12 +1,6 @@
-from sage.quadratic_forms.binary_qf import BinaryQF
-from sage.rings.all import Integers, ZZ
-from sage.arith.all import gcd
-from sage.arith.misc import xgcd
-from sage.functions.other import ceil,sqrt
-from sage.functions.log import log
-from sage.rings.finite_rings.integer_mod import Mod
-from sage.misc.prandom import randint
+from sage.all import *
 
+# Very costly
 class IdealClass:
 	def __init__(self,*args):
 		if len(args)==3:# Usual definition
@@ -94,6 +88,7 @@ class IdealClass:
 		return not self.__eq__(q)
 
 	# Implementing Dirichlet composition
+	# This is too cosltly for our applications
 	def __mul__(self,q):
 		if self.disc!=q.disc:
 			raise ValueError('The ideals are in distinct orders')
@@ -112,7 +107,7 @@ class IdealClass:
 					s,t=xgcd(u,v)[1:]
 					a1,b1,c1=a1*u*u-b1*t*u+t*t*c1,2*u*v*a1+b1*(u*s-t*v)-2*s*t*c1,a1*v*v+b1*v*s+c1*s*s
 			R=Integers(4*self.a*a1)
-			L_B=R(self.disc).sqrt(all=True)
+			L_B=R(self.disc).sqrt(all=True)# Way too costly
 			L_B=[ZZ(x) for x in L_B]
 			b_continue=True
 			i=0

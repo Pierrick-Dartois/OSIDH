@@ -1,6 +1,7 @@
 import sys
 sys.path.append('Documents/Codes/OSIDH')
 from Class_group import *
+from sage.all import *
 
 ### Testing the constructor
 print("Testing the constructor")
@@ -52,7 +53,7 @@ try:
 except ValueError:
 	print("Test 6: success")
 
-## Ideal above a prime: dsic=-224=-2^2*56 (Disc_K=-56, conductor f=2)
+## Ideal above a prime: dsic=-224=-2**2*56 (Disc_K=-56, conductor f=2)
 
 # Test 7: splitting prime 5 ((Delta_K/5)=+1)
 try:
@@ -155,7 +156,7 @@ else:
 print("\nTesting multiplication")
 
 # Test 1: it should work (same discriminants)
-d=-4*3^10
+d=-4*3**10
 L_forms=BinaryQF_reduced_representatives(d,primitive_only=True)
 n=len(L_forms)
 b_test=True
@@ -193,22 +194,19 @@ print("\nTesting exponentiation")
 
 # Test 1: recovering neutral element
 E=IdealClass(d)
-if J^n==E:
+if J**n==E:
 	print("Test 1: success")
 else:
 	print("Test 1: failure")
 
 # Test 2: huge exponentiation to check special cases and timing
-d=-3*2^100
+d=-3*2**100
 I=IdealClass(d,7)
-k=randint(1,2^100)
-l=-randint(1,2^100)
+k=randint(1,2**100)
+l=-randint(1,2**100)
 try:
-	J=I^k
-	K=I^l
+	J=I**k
+	K=I**l
 	print("Test 2: success")
 except:
 	print("Test 2: failure")
-
-
-

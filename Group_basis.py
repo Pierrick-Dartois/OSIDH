@@ -1,7 +1,4 @@
-from sage.matrix.constructor import matrix
-from sage.matrix.special import block_matrix
-from sage.arith.all import lcm
-from sage.rings.all import ZZ
+from sage.all import *
 
 ### Discrete logarithm
 
@@ -232,7 +229,7 @@ def Basis(e,S,N,L_factors):
 	L_orders=[]
 	for i in range(s):
 		pi,alphai=L_factors[i]
-		Ni=N/pi**alphai
+		Ni=N//pi**alphai
 		Si=[s**Ni for s in S]
 		Bi,E_Bi=Basis_p(e,Si,pi)
 		B+=Bi
@@ -300,11 +297,11 @@ def Lattice_basis(M,b):
 	t=M.ncols()
 	L_A=[]
 	for i in range(r):
-		Ai=block_matrix([[matrix(M[i])],[b[i]]])
+		Ai=block_matrix(ZZ,[[matrix(M[i])],[b[i]]])
 		# Here, the generator vectors are the lines and not the columns (because of HNF)
 		L_A.append(Ai)
 	m=lcm(b)
-	A=block_matrix([[(m//b[i])*L_A[i]] for i in range(r)])
+	A=block_matrix(ZZ,[[(m//b[i])*L_A[i]] for i in range(r)])
 	A1=A.hermite_form()
 	return m*A1[0:t,0:t].inverse()
 
