@@ -1,0 +1,4 @@
+Time Basis: 5290.857162952423 s
+Time DL_matrix: 3790.3734011650085 s
+Time Lattice_basis: 9.284454822540283 s
+Total Time: 9090.515018939972 s

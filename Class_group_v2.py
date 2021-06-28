@@ -61,4 +61,4 @@ class IdealClassGroup:
 
 class IdealClass:
 	def __init__(self,*args):
-		pass
+		
