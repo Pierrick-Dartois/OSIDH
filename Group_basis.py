@@ -456,7 +456,7 @@ def Lattice_basis(M,b):
 
 	* M: integer matrix of size r*t
 
-	* b: integer vector of size r
+	* b: list of integers of length r
 	
 	OUTPUT:
 
@@ -487,7 +487,7 @@ def IsGoodLatticeBasis(B,M,b):
 
 	* M: integer matrix of size r*t
 
-	* b: integer vector of size r
+	* b: list of integers of length r
 	
 	OUTPUT:
 	
