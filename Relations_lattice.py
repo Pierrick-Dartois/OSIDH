@@ -58,7 +58,7 @@ Q_save=[get_abc(mfq) for mfq in Q]
 B_save=[get_abc(mfb) for mfb in B]
 
 # Saving the basis and the matrix
-with open("Documents/Codes/OSIDH/Relations_lattice_basis.txt","w",encoding="utf-8") as f:
+with open("Documents/Codes/OSIDH/Data_files/Relations_lattice_basis.txt","w",encoding="utf-8") as f:
 	f.write("Group basis\n")
 	r=len(B)
 	for i in range(r):
