@@ -1,4 +1,4 @@
-import os, sys
+#import os, sys
 #sys.path.append('Documents/Codes/OSIDH')
 from sage.all import *
 from time import time
