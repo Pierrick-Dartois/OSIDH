@@ -2,6 +2,107 @@ from sage.all import *
 
 dirpath="Documents/Codes/OSIDH"
 
+class OSIDH:
+	def __init__(self,n,t,l,r,d_K=-4):
+		r"""
+		Instanciaates the parameters of a session of OSIDH
+
+		INPUT:
+
+		* n: depth of the descending l-isogeny chains.
+
+		* t: number of prime ideals q_j.
+
+		* l: prime number (degree of the descending isogenies).
+
+		* r: integral range for the exponents of the q_j.
+
+		* d_K: fundamental discriminant such that h(d_K)=1 (d_K=-3 or -4).
+		"""
+		
+		if not l.is_prime():
+			raise ValueError("l should be a prime")
+		if d_K not in [3,4]:
+			raise ValueError("d_K should be -3 or -4")
+
+		self.n=n
+		self.t=t
+		self.l=l
+		self.r=r
+		self.d_K=d_K
+
+		# List of prime numbers q_j
+		L_q=[]
+		q=2
+		prod=l
+		for j in range(t):
+			while kronecker(d_K,q)==-1 or q==l:
+				q=next_prime(q)
+			L_q.append(q)
+			prod*=q
+			q=next_prime(q)
+
+		# Make sure that p is big enough to ensure that we con compute the chains efficiently
+		threshold=l**(2*n)*L_q[-1]*-d_K
+		while prod<threshold:
+			prod*=l
+
+
+		# Prime p: p%3==2 if d_K=-3 and p%4==3 if d_K=-4 to ensure that 
+		# K-oriented supersingular elliptic curves/Fp^2 exist
+		# p\pm 1 divisible by l and the q_j so that torsion points are Fp^2-rational 
+		if d_K==-3:
+			f=1
+			if (f*prod)%3==2:
+				f+=1
+			if (f*prod)%3==1:
+				p=f*prod+1
+			else:
+				p=f*prod-1
+			while not p.is_prime():
+				f+=1
+				if (f*prod)%3==2:
+					f+=1
+				if (f*prod)%3==1:
+					p=f*prod+1
+				else:
+					p=f*prod-1
+		else:
+			f=1
+			if (f*prod)%4 in [1,3]:
+				f+=1
+			if (f*prod)%4==2:
+				p=f*prod+1
+			else:
+				p=f*prod-1
+			while not p.is_prime():
+				f+=1
+				if (f*prod)%4 in [1,3]:
+					f+=1
+				if (f*prod)%4==2:
+					p=f*prod+1
+				else:
+					p=f*prod-1
+
+		self.p=p
+
+		# Field of definition and polynomial rings
+		self.F=GF(p**2,"a",proof="False")
+		self.Fxy=PolynomialRing(F,["x","y"])
+		self.Fz=PolynomialRing(F,"z")
+
+		# Modular polynomials
+		
+
+
+
+
+
+
+
+
+
+
 def Phi(R,q,x,y):
 	r"""
 	Returns the modular polynomial of level q modulo p (implicit prime).
@@ -85,6 +186,10 @@ def Chain(R,S,j0,l,n):
 			L_j.append(L_roots[i][0])
 			k+=1
 	return L_j
+
+def IsogenyFromCurves(E0,E1,l):
+	pass
+
 
 def Ladder_q(R,S,L_chain,l,q):
 	pass
