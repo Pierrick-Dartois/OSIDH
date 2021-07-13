@@ -3,77 +3,150 @@ sys.path.append("Documents/Codes/OSIDH")
 from sage.all import *
 from OSIDH_protocol import *
 from time import time
+import pickle
 
-## Parameters
-# General parameters (toy parameters)
+dirpath="Documents/Codes/OSIDH"
+
+
+## Test __init__
+print("Testing constructor")
+
+# Test 1:
+# Usual toy Parameters
 n=28
 t=10
 l=2
 r=3
 # so that h\simeq l**n\simeq (2r+1)**t
 d_K=-4
-f=l**n
-d=d_K*f**2
-h=l**(n-1)# Class number
 
-# List of prime numbers
-L_q=[]
-q=3
-for j in range(t):
-	while not Mod(d_K,q).is_square() or q==l:
-		q=next_prime(q)
-	L_q.append(q)
-	q=next_prime(q)
-
-
-# Chosen as the first prime number p>l**(2*n)*L_q[-1]*abs(d_K) 
-# and congruent to 3 mod 4 (so that y^2=x^3+x is supersingular)
-p=next_prime(L_q[-1]*2**(2*n)*4)
-while Mod(p,4)!=3: 
-	p=next_prime(p)
-
-F=GF(p**2,"a")
-R=PolynomialRing(F,2,["x","y"])
-x,y=R.gens()
-S=PolynomialRing(F,"z")
-
-## Test Phi(R,q,x,y)
-print("Testing the function Phi")
-
-# Test 1: Phi_2
 try:
-	f=Phi(R,2,x,y)
+	t1=time()
+	#prot=OSIDH(n,t,l,r,d_K)
+	t2=time()
 	print("Test 1: success")
-	print("Phi_2(x,y) = {0}".format(str(f)))
+	print("Time test 1: {0} s".format(t2-t1))
 except:
 	print("Test 1: failure")
 
-# Test 2: Phi_q for q prime in L_q
+# Test 1-bis: pickling
 try:
 	t1=time()
-	f=Phi(R,L_q[0],x,y)
+	#prot.save(dirpath+"/pickle_OSIDH.txt")
+	t2=time()
+	print("Test 1-bis (pickling): success")
+	print("Time test 1-bis: {0} s".format(t2-t1))
+except:
+	print("Test 1-bis (pickling): failure")
+
+# Test 1-ter: unpickling
+try:
+	t1=time()
+	#with open(dirpath+"/pickle_OSIDH.txt","rb") as f:
+		#prot2=pickle.load(f)
+	t2=time()
+	print("Test 1-ter (unpickling): success")
+	print("Time test 1-ter: {0} s".format(t2-t1))
+except:
+	print("Test 1-ter (unpickling): failure")
+
+
+# Test 2:
+# Toy Parameters with different l
+n=18
+t=10
+l=3
+r=3
+# so that h\simeq l**n\simeq (2r+1)**t
+d_K=-4
+
+try:
+	t1=time()
+	#prot=OSIDH(n,t,l,r,d_K)
 	t2=time()
 	print("Test 2: success")
-	print("Time of test 2: {0} s".format(t2-t1))
+	print("Time test 2: {0} s".format(t2-t1))
 except:
 	print("Test 2: failure")
 
-#Test 3: not in the database
+
+# Test 3:
+# Toy Parameters with different d_K
+n=28
+t=10
+l=2
+r=3
+# so that h\simeq l**n\simeq (2r+1)**t
+d_K=-3
+
 try:
-	f=Phi(R,997,x,y)
-	print("Test 3: failure")
-except:
+	t1=time()
+	#prot=OSIDH(n,t,l,r,d_K)
+	t2=time()
 	print("Test 3: success")
-
-
-## Test Chain(R,S,j0,l,n)
-print("\nTesting the function Chain")
-
-# Test 1:
-try:
-	L=Chain(R,S,1728,l,n)
-	print("Test 1: sucess")
+	print("Time test 3: {0} s".format(t2-t1))
 except:
-	print("Test 1: failure")
+	print("Test 3: failure")
 
+# Test 4:
+# Toy Parameters with different d_K and l
+n=18
+t=10
+l=3
+r=3
+# so that h\simeq l**n\simeq (2r+1)**t
+d_K=-3
+
+try:
+	t1=time()
+	#prot=OSIDH(n,t,l,r,d_K)
+	t2=time()
+	print("Test 4: success")
+	print("Time test 4: {0} s".format(t2-t1))
+except:
+	print("Test 4: failure")
+
+# Test 5:
+# Big polynomial
+n=256
+t=74
+l=2
+r=5
+d_K=-4
+
+L_q=[]
+q=2
+prod=l
+for j in range(t):
+	while kronecker(d_K,q)==-1 or q==l:
+		q=next_prime(q)
+	L_q.append(q)
+	prod*=q
+	q=next_prime(q)
+
+f=1
+if (f*prod)%4 in [1,3]:
+	f+=1
+if (f*prod)%4==2:
+	p=f*prod+1
+else:
+	p=f*prod-1
+while not p.is_prime():
+	f+=1
+	if (f*prod)%4 in [1,3]:
+		f+=1
+	if (f*prod)%4==2:
+		p=f*prod+1
+	else:
+		p=f*prod-1
+
+F=GF(p**2,"a",proof="False")
+Fxy=PolynomialRing(F,["x","y"])
+x,y=Fxy.gens()
+
+t1=time()
+P,t_a,t_b,t_c,t_d,t_e,t_f=Phi(Fxy,881,x,y)
+t2=time()
+
+print("Test 5: {0} s".format(t2-t1))
 
