@@ -4,15 +4,116 @@ from time import time
 
 dirpath="Documents/Codes/OSIDH"
 
-# Intermediary function to add a list of polynomials and optimize addition cost 
-# (getting very heavy when there are a lot of coefficients without optimization)
+## Intermediary functions
 def add(L):
+	r"""Intermediary function to add a list of polynomials and optimize addition cost 
+	(getting very heavy when there are a lot of coefficients without optimization).
+
+	INPUT: L: list of terms.
+
+	OUTPUT: sum of the terms in L.
+	"""
+
 	k=len(L)
 	if k==1:
 		return L[0]
 	else:
 		return add(L[0:k//2])+add(L[k//2::])
 
+def get_abc(q):
+	r"""
+	Computing the coefficients a, b, c of a qudratic form in pari type.
+
+	INPUT: a pari/gp object gen representing a binary quadratic form (Qfb).
+
+	OUTPUT: a tuple of sage integer coefficients (a, b, c).
+	"""
+	L=str(q).split(",")
+	a=ZZ(L[0][4:])
+	b=ZZ(L[1])
+	c=ZZ(L[2][:-1])
+	return (a,b,c)
+
+def RandomFieldElt(a,p):
+	r"""
+	Replacement for the instruction F.random_element() where F is the 
+	quadratic extension of Fp, which is very inefficient.
+
+
+	INPUT:
+
+	* a: generator of F.
+
+	* p: characteristic of F.
+
+	OUTPUT: a random element in F.
+	"""
+
+	return randint(0,p-1)+a*randint(0,p-1)
+
+def RandomECElt(a,p,E):
+	r"""
+	Replacement for E.random_element() and E.random_point() where E is an
+	elliptic curve defined over a quadractic extension F of Fp, which are very
+	inefficient.
+
+	INPUT: 
+
+	* a: generator of F.
+
+	* p: characteristic of F.
+
+	* E: an elliptic curve defined over F.
+
+	OUTPUT: a random element in E\{(0:1:0)}. The output distribution is not uniform
+	because it is not necessary.
+	"""
+
+	x=RandomFieldElt(a,p)
+	A=E.a4()
+	B=E.a6()
+	while not (x**3+A*x+B).is_square():
+		x=RandomFieldElt(a,p)
+	y=x.sqrt(extend=False,all=False)
+	return E((x,y))
+
+def Torsion_basis(a,p,E,q,N):
+	r"""
+	Finds a basis of the q-torsion subgroup E[q] of the elliptic curve E, 
+	provided that all its points are rational.
+
+	INPUT:
+
+	* a: generator of a finite field F (quadratic extension of Fp).
+
+	* p: characteristic of F.
+
+	* E: elliptic curve defined over F.
+
+	* q: (prime) integer.
+
+	* N: cardinality of E.
+
+	OUTPUT:
+
+	A basis of E[q]. Raises an error if E[q] is not rational.
+	"""
+
+	if N%(q**2)!=0:
+		raise ValueError("The q-torsion subgroup is not rational")
+	else:
+		m=N//q**2
+		P=m*RandomECElt(a,p,E)
+		while P.is_zero():
+			P=m*RandomECElt(a,p,E)
+
+		Q=m*RandomECElt(a,p,E)
+		while P.weil_pairing(Q,q).is_one():
+			Q=m*RandomECElt(a,p,E)
+		return (P,Q)
+
+
+## Base class with OSIDH parameters
 class OSIDH:
 	def __init__(self,n,t,l,r,d_K=-4):
 		r"""
@@ -97,6 +198,7 @@ class OSIDH:
 					p=f*prod-1
 
 		self.p=p
+		self.pm1=p-f*prod
 
 		# Field of definition and polynomial rings
 		self.F=GF(p**2,"a",proof="False")
@@ -126,47 +228,197 @@ class OSIDH:
 			except:
 				raise ValueError("Prime q not in the database")
 
+		# Origin curve
+		a=self.F.gen()
+		if d_K==-3:
+			if p==f*prod-1:
+				self.E0=EllipticCurve(self.F,[0,1])
+			else:
+				b=RandomFieldElt(a,p)
+				while b.is_square():
+					b=RandomFieldElt(a,p)
+				self.E0=EllipticCurve(self.F,[0,b**3])
+		else:
+			if p==f*prod-1:
+				self.E0=EllipticCurve(self.F,[1,0])
+			else:
+				b=RandomFieldElt(a,p)
+				while b.is_square():
+					b=RandomFieldElt(a,p)
+				self.E0=EllipticCurve(self.F,[b**2,0])
+
+		# Defining the orientation in E0 as follows:
+		# * If d_K==-3, theta=(-1+sqrt(3)*i)/2 maps to (x,y)|-->(zeta*x,y)
+		# with zeta, primitive third root of unity
+		# * If d_K==-4, theta=i maps to (x,y)|-->(-x,zeta*y) with zeta**2=-1
+		if d_K==-3:
+			self.zeta=self.F.zeta(3)
+		else:
+			self.zeta=self.F(-1).sqrt(extend=False,all=False)
+
+
 	def save(self,filename):
 		with open(filename,"wb") as f:
 			pickle.dump(self,f)
 
 
-		
+## Class of descending l-isogeny chains for a given set of parameters
 class Chain:
-	def __init__(self,osidh):
-		self.L_j=[]
-		if osidh.d_K==-3:
-			self.L_j.append(osidh.F(1728))
+	def __init__(self,osidh,L_j=[]):
+		r"""
+		Instanciates a descending l-isogeny chain of length n starting from the origin j-invariant.
+
+		INPUT:
+
+		* osidh: An OSIDH object (instanciates general parameters).
+
+		* L_j: list of j-invariants.
+
+		OUTPUT:
+
+		If L_j is empty, instanciates a random chain. Otherwise, self.L_j=L_j.
+		"""
+
+		self.osidh=osidh
+		if len(L_j)>0:
+			if len(L_j)!=osidh.n+1:
+				raise ValueError("The list of j-invariant should have length n+1")
+			else:
+				self.L_j=L_j
 		else:
-			self.L_j.append(osidh.F(0))
+			if osidh.d_K==-3:
+				self.L_j.append(osidh.F(1728))
+			else:
+				self.L_j.append(osidh.F(0))
 
-		phi_l=osidh.L_phi[0]
-		z=osidh.Fz.gen()
+			phi_l=osidh.L_phi[0]
+			z=osidh.Fz.gen()
 
-		if osidh.n>=1:
-			# Choice of the second j-invariant
-			f=phi_l(self.L_j[0],z)
-			L_roots=f.roots()
-			m=len(L_roots)
-			i=randint(0,m-1)
-			while L_roots[i][0]==self.L_j[0]:
-				i=randint(0,m-1)
-			self.L_j.append(L_roots[i][0])
-
-			# Choice of the other j-invariants
-			k=2
-			while k<=osidh.n:
-				f=phi_l(self.L_j[k-1],z)
+			if osidh.n>=1:
+				# Choice of the second j-invariant
+				f=phi_l(self.L_j[0],z)
 				L_roots=f.roots()
 				m=len(L_roots)
 				i=randint(0,m-1)
-				while L_roots[i][0]==self.L_j[k-2]:
+				while L_roots[i][0]==self.L_j[0]:
 					i=randint(0,m-1)
 				self.L_j.append(L_roots[i][0])
-				k+=1
 
-	def action_prime(self,mfq):
-		pass
+				# Choice of the other j-invariants
+				k=2
+				while k<=osidh.n:
+					f=phi_l(self.L_j[k-1],z)
+					L_roots=f.roots()
+					m=len(L_roots)
+					i=randint(0,m-1)
+					while L_roots[i][0]==self.L_j[k-2]:
+						i=randint(0,m-1)
+					self.L_j.append(L_roots[i][0])
+					k+=1
+
+	def action_torsion(self,mfq,i):
+		r"""Computes the action of the prime ideal represented by the form mfq at level i.
+		Used to remove the ambiguity with the action by the conjugate of mfq at level i. 
+		Does not use modular polynomials.
+		
+		INPUT:
+
+		* mfq: form of discriminant d_K lying above a prime.
+
+		* i: level.
+
+		OUTPUT:
+
+		The j-invariant of mfq*Ei. 
+		"""
+		
+		# Recovering the isogeny chain up to depth i form the j-invariants
+		L_E=[self.osidh.E0]+[EllipticCurve(j=self.L_j[j]) for j in range(1,i+1)]
+		l=self.osidh.l
+		L_iso=[EllipticCurveIsogeny(L_E[j], None, L_E[j+1], l) for j in range(i)]
+		L_iso_dual=[phi.dual() for phi in L_iso]
+
+		# Find lamb such that the idal associated to mfq = [q,theta-lamb]
+		# where theta generates the order O_K
+		q,b,c=get_abc(mfq)
+		if self.osidh.d_K==-3:
+			lamb=(b-1)//2
+		else:
+			lamb=b//2
+
+		# Find a basis of Ei[q]
+		p=osidh.p
+		N=(p-osidh.pm1)**2
+		a=osidh.F.gen()
+		P,Q=Torsion_basis(a,p,L_E[-1],q,N)
+
+		# Image of the basis by dual isogenies
+		R,S=P,Q
+		for j in range(i):
+			R=L_iso_dual[i-1-j](R)
+			S=L_iso_dual[i-1-j](S)
+
+		# Image of R,S by theta-lamb
+		zeta=self.osidh.zeta
+		xR,yR=R.xy()
+		xS,yS=S.xy()
+		if self.osidh.d_K==-3:
+			R1=L_E[0](zeta*xR,yR)
+			S1=L_E[0](zeta*xS,yS)
+		else:
+			R1=L_E[0](-xR,zeta*yR)
+			S1=L_E[0](-xS,zeta*yS)
+		R=R1-lamb*R
+		S=S1-lamb*S
+
+		# Image of R, S by the isogeny chain E0 --> Ei
+		for j in range(i):
+			R=L_iso[j](R)
+			S=L_iso[j](S)
+
+		# Computing a generator T of Ei[mfq]
+		if R.is_zero():
+			T=P
+		else:
+			U=S
+			k=1
+			while U!=R:
+				U+=S
+				k+=1
+			T=P-k*Q
+
+		# Computing mfq*Ei:=Ei/<T>
+		phi=L_E[-1].isogeny(T)
+		return phi.codomain().j_invariant()
+
+	def action_prime(self,mfq,ind_q):
+		r"""Computes the action of the prime ideal represented by the form mfq on self using 
+		modular polynomial. Uses action_torsion in case of ambiguity.
+
+		INPUT:
+
+		* mfq: form of discriminant d_K lying above a prime q.
+
+		* ind_q: index of q in self.osidh.L_q.
+
+		OUTPUT:
+
+		The chain obtained via the action of mfq on self.
+		"""
+		
+		q=self.osidh.L_q[ind_q]
+		phi_l=self.osidh.L_phi[0]
+		phi_q=self.osidh.L_phi[ind_q+1]
+		z=self.osidh.Fz.gen()
+
+		LF_j=[self.L_j[0]]
+		for i in range(self.osidh.n):
+			f_l=phi_l(LF_j[i],z)
+			f_q=phi_q(self.L_j[i+1],z)
+			f=gcd(f_l,f_q)
+			
+
+
 
 
 def Phi(R,q,x,y):
