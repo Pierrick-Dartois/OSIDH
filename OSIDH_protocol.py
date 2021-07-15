@@ -72,9 +72,11 @@ def RandomECElt(a,p,E):
 	x=RandomFieldElt(a,p)
 	A=E.a4()
 	B=E.a6()
-	while not (x**3+A*x+B).is_square():
+	y2=x**3+A*x+B
+	while not y2.is_square():
 		x=RandomFieldElt(a,p)
-	y=x.sqrt(extend=False,all=False)
+		y2=x**3+A*x+B
+	y=y2.sqrt(extend=False,all=False)
 	return E((x,y))
 
 def Torsion_basis(a,p,E,q,N):
@@ -202,8 +204,8 @@ class OSIDH:
 
 		# Field of definition and polynomial rings
 		self.F=GF(p**2,"a",proof="False")
-		self.Fxy=PolynomialRing(self.F,["x","y"])
-		self.Fz=PolynomialRing(self.F,"z")
+		self.Fxy=PolynomialRing(self.F,["x","y"],sparse=True)
+		self.Fz=PolynomialRing(self.F,"z",sparse=True)
 
 		# Modular polynomials
 		self.L_phi=[]
@@ -212,10 +214,10 @@ class OSIDH:
 		L_monom=monomials([x,y],[d_max,d_max])
 		for q in [l]+L_q:
 			try:
-				with open(dirpath+"/Modular_polynomials/phi_j_{0}.txt".format(str(q)),"r",encoding="utf-8") as f:
+				with open(dirpath+"/Modular_polynomials/phi_j_{0}.txt".format(str(q)),"r",encoding="utf-8") as file:
 		
 					L_P=[]
-					for row in f:
+					for row in file:
 						L_row=row.split(" ")
 						L_ind=L_row[0][1:-1].split(",")
 						u,v=ZZ(L_ind[0]),ZZ(L_ind[1])
@@ -286,10 +288,11 @@ class Chain:
 			else:
 				self.L_j=L_j
 		else:
+			self.L_j=[]
 			if osidh.d_K==-3:
-				self.L_j.append(osidh.F(1728))
-			else:
 				self.L_j.append(osidh.F(0))
+			else:
+				self.L_j.append(osidh.F(1728))
 
 			phi_l=osidh.L_phi[0]
 			z=osidh.Fz.gen()
@@ -332,10 +335,30 @@ class Chain:
 		The j-invariant of mfq*Ei. 
 		"""
 		
+		# General OSIDH parameters
+		p=self.osidh.p
+		N=(p-self.osidh.pm1)**2
+		a=self.osidh.F.gen()
+
 		# Recovering the isogeny chain up to depth i form the j-invariants
-		L_E=[self.osidh.E0]+[EllipticCurve(j=self.L_j[j]) for j in range(1,i+1)]
+		L_E=[self.osidh.E0]
 		l=self.osidh.l
-		L_iso=[EllipticCurveIsogeny(L_E[j], None, L_E[j+1], l) for j in range(i)]
+		L_iso=[]
+		for j in range(i):
+			# Torsion subgroup Ej[l]
+			Pj,Qj=Torsion_basis(a,p,L_E[-1],l,N)
+			# Trying all cyclic subgroups of Ej[l]
+			phij=L_E[-1].isogeny(Pj)
+			if phij.codomain().j_invariant()!=self.L_j[j+1]:
+				T=Qj
+				phij=L_E[-1].isogeny(T)
+				k=0
+				while phij.codomain().j_invariant()!=self.L_j[j+1] and k<=l-1:
+					T+=Pj
+					phij=L_E[-1].isogeny(T)
+					k+=1
+			L_E.append(phij.codomain())
+			L_iso.append(phij)
 		L_iso_dual=[phi.dual() for phi in L_iso]
 
 		# Find lamb such that the idal associated to mfq = [q,theta-lamb]
@@ -347,9 +370,6 @@ class Chain:
 			lamb=b//2
 
 		# Find a basis of Ei[q]
-		p=osidh.p
-		N=(p-osidh.pm1)**2
-		a=osidh.F.gen()
 		P,Q=Torsion_basis(a,p,L_E[-1],q,N)
 
 		# Image of the basis by dual isogenies
@@ -416,11 +436,15 @@ class Chain:
 			f_l=phi_l(LF_j[i],z)
 			f_q=phi_q(self.L_j[i+1],z)
 			f=gcd(f_l,f_q)
-			
+			L_roots=f.roots(multiplicities=False)
+			if len(L_roots)==1:
+				LF_j.append(L_roots[0])
+			else:
+				LF_j.append(self.action_torsion(mfq,i))
+		return Chain(self.osidh,LF_j)
 
 
-
-
+## Obsolete functions: will be deleted soon
 def Phi(R,q,x,y):
 	r"""
 	Returns the modular polynomial of level q modulo p (implicit prime).
