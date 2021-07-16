@@ -240,29 +240,31 @@ class OSIDH:
 
 		# Field of definition and polynomial rings
 		self.F=GF(p**2,"a",proof="False")
-		self.Fxy=PolynomialRing(self.F,["x","y"],sparse=True)
+		#self.Fxy=PolynomialRing(self.F,["x","y"],sparse=True)
 		self.Fz=PolynomialRing(self.F,"z",sparse=True)
 
 		# Modular polynomials
 		self.L_phi=[]
-		x,y=self.Fxy.gens()
-		d_max=L_q[-1]+2
-		L_monom=monomials([x,y],[d_max,d_max])
+		#x,y=self.Fxy.gens()
+		#d_max=L_q[-1]+2
+		#L_monom=monomials([x,y],[d_max,d_max])
 		for q in [l]+L_q:
 			try:
 				with open(dirpath+"/Modular_polynomials/phi_j_{0}.txt".format(str(q)),"r",encoding="utf-8") as file:
 		
-					L_P=[]
+					L_P=[[0]*(q+2) for i in range(q+2)]
 					for row in file:
 						L_row=row.split(" ")
 						L_ind=L_row[0][1:-1].split(",")
-						u,v=ZZ(L_ind[0]),ZZ(L_ind[1])
+						u,v=int(L_ind[0]),int(L_ind[1])
 						c=ZZ(L_row[1][0:-1])
 						if u!=v:
-							L_P.append(c*(L_monom[d_max*u+v]+L_monom[d_max*v+u]))
+							L_P[u][v]=c
+							L_P[v][u]=c
 						else:
-							L_P.append(c*L_monom[d_max*u+v])
-					self.L_phi.append(add(L_P))
+							L_P[u][u]=c
+					phi=[self.Fz(elt) for elt in L_P]
+					self.L_phi.append(phi)
 			except:
 				raise ValueError("Prime q not in the database")
 
@@ -331,11 +333,14 @@ class Chain:
 				self.L_j.append(osidh.F(1728))
 
 			phi_l=osidh.L_phi[0]
-			z=osidh.Fz.gen()
+			Fz=osidh.Fz
 
 			if osidh.n>=1:
 				# Choice of the second j-invariant
-				f=phi_l(self.L_j[0],z)
+				L_eval=[]
+				for g in phi_l:
+					L_eval.append(g(self.L_j[0]))
+				f=Fz(L_eval)
 				L_roots=f.roots()
 				m=len(L_roots)
 				i=randint(0,m-1)
@@ -346,7 +351,10 @@ class Chain:
 				# Choice of the other j-invariants
 				k=2
 				while k<=osidh.n:
-					f=phi_l(self.L_j[k-1],z)
+					L_eval=[]
+					for g in phi_l:
+						L_eval.append(g(self.L_j[k-1]))
+					f=Fz(L_eval)
 					L_roots=f.roots()
 					m=len(L_roots)
 					i=randint(0,m-1)
@@ -477,22 +485,29 @@ class Chain:
 
 		The chain obtained via the action of mfq on self.
 		"""
-		
+
 		q=self.osidh.L_q[ind_q]
 		phi_l=self.osidh.L_phi[0]
 		phi_q=self.osidh.L_phi[ind_q+1]
-		z=self.osidh.Fz.gen()
+		Fz=self.osidh.Fz
 
 		LF_j=[self.L_j[0]]
 		for i in range(self.osidh.n):
-			f_l=phi_l(LF_j[i],z)
-			f_q=phi_q(self.L_j[i+1],z)
+			L_eval=[]
+			for g in phi_l:
+				L_eval.append(g(LF_j[i]))
+			f_l=Fz(L_eval)
+			L_eval=[]
+			for g in phi_q:
+				L_eval.append(g(self.L_j[i+1]))
+			f_q=Fz(L_eval)
 			f=gcd(f_l,f_q)
 			L_roots=f.roots(multiplicities=False)
 			if len(L_roots)==1:
 				LF_j.append(L_roots[0])
 			else:
 				LF_j.append(self.action_torsion(mfq,ind_q,i+1))
+
 		return Chain(self.osidh,LF_j)
 
 
