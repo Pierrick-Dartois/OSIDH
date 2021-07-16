@@ -5,6 +5,7 @@ from time import time
 dirpath="Documents/Codes/OSIDH"
 
 ## Intermediary functions
+# Obsolete function: was used with bivariate polynomials
 def add(L):
 	r"""Intermediary function to add a list of polynomials and optimize addition cost 
 	(getting very heavy when there are a lot of coefficients without optimization).
@@ -240,18 +241,13 @@ class OSIDH:
 
 		# Field of definition and polynomial rings
 		self.F=GF(p**2,"a",proof="False")
-		#self.Fxy=PolynomialRing(self.F,["x","y"],sparse=True)
 		self.Fz=PolynomialRing(self.F,"z",sparse=True)
 
 		# Modular polynomials
 		self.L_phi=[]
-		#x,y=self.Fxy.gens()
-		#d_max=L_q[-1]+2
-		#L_monom=monomials([x,y],[d_max,d_max])
 		for q in [l]+L_q:
 			try:
 				with open(dirpath+"/Modular_polynomials/phi_j_{0}.txt".format(str(q)),"r",encoding="utf-8") as file:
-		
 					L_P=[[0]*(q+2) for i in range(q+2)]
 					for row in file:
 						L_row=row.split(" ")
