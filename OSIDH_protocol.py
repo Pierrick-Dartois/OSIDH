@@ -79,7 +79,7 @@ def RandomECElt(a,p,E):
 	y=y2.sqrt(extend=False,all=False)
 	return E((x,y))
 
-def Torsion_basis(a,p,E,q,N):
+def Torsion_basis(a,p,E,q,N,v):
 	r"""
 	Finds a basis of the q-torsion subgroup E[q] of the elliptic curve E, 
 	provided that all its points are rational.
@@ -98,13 +98,11 @@ def Torsion_basis(a,p,E,q,N):
 
 	OUTPUT:
 
-	A basis of E[q]. Raises an error if E[q] is not rational.
+	A basis of E[q].
 	"""
 
-	if N%(q**2)!=0:
-		raise ValueError("The q-torsion subgroup is not rational")
-	else:
-		m=N//q**2
+	m=N//q**v
+	if v==2:
 		P=m*RandomECElt(a,p,E)
 		while P.is_zero():
 			P=m*RandomECElt(a,p,E)
@@ -112,7 +110,30 @@ def Torsion_basis(a,p,E,q,N):
 		Q=m*RandomECElt(a,p,E)
 		while P.weil_pairing(Q,q).is_one():
 			Q=m*RandomECElt(a,p,E)
-		return (P,Q)
+	else:
+		P=m*RandomECElt(a,p,E)
+		while P.is_zero():
+			P=m*RandomECElt(a,p,E)
+		# Make sure that P has order q
+		P1=q*P
+		while not P1.is_zero():
+			P=P1
+			P1=q*P1
+
+		Q=m*RandomECElt(a,p,E)
+		# Make sure that Q has order q
+		Q1=q*Q
+		while not Q1.is_zero():
+			Q=Q1
+			Q1=q*Q1
+		while P.weil_pairing(Q,q).is_one():
+			Q=m*RandomECElt(a,p,E)
+			# Make sure that Q has order q
+			Q1=q*Q
+			while not Q1.is_zero():
+				Q=Q1
+				Q1=q*Q1
+	return (P,Q)
 
 
 ## Base class with OSIDH parameters
@@ -200,7 +221,22 @@ class OSIDH:
 					p=f*prod-1
 
 		self.p=p
-		self.pm1=p-f*prod
+		# Cordinality of the first elliptic curve self.E0
+		self.N=(f*prod)**2
+		# List of valuations
+		L_v=[2]*(t+1)
+		m=f*prod
+		m=m//l
+		while m%l==0:
+			m=m//l
+			L_v[0]+=2
+		for i in range(t):
+			m=m//L_q[i]
+			while m%L_q[i]==0:
+				m=m//L_q[i]
+				L_v[i+1]+=2
+		self.L_v=L_v
+
 
 		# Field of definition and polynomial rings
 		self.F=GF(p**2,"a",proof="False")
@@ -319,14 +355,16 @@ class Chain:
 					self.L_j.append(L_roots[i][0])
 					k+=1
 
-	def action_torsion(self,mfq,i):
+	def action_torsion(self,mfq,ind_q,i):
 		r"""Computes the action of the prime ideal represented by the form mfq at level i.
 		Used to remove the ambiguity with the action by the conjugate of mfq at level i. 
 		Does not use modular polynomials.
 		
 		INPUT:
 
-		* mfq: form of discriminant d_K lying above a prime.
+		* mfq: form of discriminant d_K lying above a prime q.
+		
+		* ind_q: index of q in self.osidh.L_q.
 
 		* i: level.
 
@@ -337,7 +375,8 @@ class Chain:
 		
 		# General OSIDH parameters
 		p=self.osidh.p
-		N=(p-self.osidh.pm1)**2
+		N=self.osidh.N
+		L_v=self.osidh.L_v
 		a=self.osidh.F.gen()
 
 		# Recovering the isogeny chain up to depth i form the j-invariants
@@ -346,7 +385,7 @@ class Chain:
 		L_iso=[]
 		for j in range(i):
 			# Torsion subgroup Ej[l]
-			Pj,Qj=Torsion_basis(a,p,L_E[-1],l,N)
+			Pj,Qj=Torsion_basis(a,p,L_E[-1],l,N,L_v[0])
 			# Trying all cyclic subgroups of Ej[l]
 			phij=L_E[-1].isogeny(Pj)
 			if phij.codomain().j_invariant()!=self.L_j[j+1]:
@@ -370,7 +409,7 @@ class Chain:
 			lamb=b//2
 
 		# Find a basis of Ei[q]
-		P,Q=Torsion_basis(a,p,L_E[-1],q,N)
+		P,Q=Torsion_basis(a,p,L_E[-1],q,N,L_v[ind_q+1])
 
 		# Image of the basis by dual isogenies
 		R,S=P,Q
@@ -440,7 +479,7 @@ class Chain:
 			if len(L_roots)==1:
 				LF_j.append(L_roots[0])
 			else:
-				LF_j.append(self.action_torsion(mfq,i))
+				LF_j.append(self.action_torsion(mfq,ind_q,i+1))
 		return Chain(self.osidh,LF_j)
 
 

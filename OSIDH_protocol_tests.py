@@ -7,12 +7,7 @@ import pickle
 
 dirpath="Documents/Codes/OSIDH"
 
-### Class OSIDH
-
-## Test __init__
-print("Testing constructor")
-
-# Test 1:
+### Usual toy parameters 
 # Usual toy Parameters
 n=28
 t=10
@@ -20,20 +15,23 @@ l=2
 r=3
 # so that h\simeq l**n\simeq (2r+1)**t
 d_K=-4
+print("Testing with usual toy parameters: n={0}, t={1}, l={2}, r={3}, d_K={4}".format(n,t,l,r,d_K))
 
+## Class OSIDH
+# Test 1: test __init__
 try:
 	t1=time()
-	prot=OSIDH(n,t,l,r,d_K)
+	osidh=OSIDH(n,t,l,r,d_K)
 	t2=time()
-	print("Test 1: success")
+	print("Test 1 (creation OSIDH): success")
 	print("Time test 1: {0} s".format(t2-t1))
 except:
-	print("Test 1: failure")
+	print("Test 1 (creation OSIDH): failure")
 
 # Test 1-bis: pickling
 try:
 	t1=time()
-	prot.save(dirpath+"/pickle_OSIDH.txt")
+	osidh.save(dirpath+"/pickle_OSIDH.txt")
 	t2=time()
 	print("Test 1-bis (pickling): success")
 	print("Time test 1-bis: {0} s".format(t2-t1))
@@ -44,96 +42,173 @@ except:
 try:
 	t1=time()
 	with open(dirpath+"/pickle_OSIDH.txt","rb") as f:
-		prot2=pickle.load(f)
+		osidh=pickle.load(f)
 	t2=time()
 	print("Test 1-ter (unpickling): success")
 	print("Time test 1-ter: {0} s".format(t2-t1))
 except:
 	print("Test 1-ter (unpickling): failure")
 
-
-# Test 2:
-# Toy Parameters with different l
-n=18
-t=10
-l=3
-r=3
-# so that h\simeq l**n\simeq (2r+1)**t
-d_K=-4
-
-try:
-	t1=time()
-	prot=OSIDH(n,t,l,r,d_K)
-	t2=time()
-	print("Test 2: success")
-	print("Time test 2: {0} s".format(t2-t1))
-except:
-	print("Test 2: failure")
-
-
-# Test 3:
-# Toy Parameters with different d_K
-n=28
-t=10
-l=2
-r=3
-# so that h\simeq l**n\simeq (2r+1)**t
-d_K=-3
-
-try:
-	t1=time()
-	prot=OSIDH(n,t,l,r,d_K)
-	t2=time()
-	print("Test 3: success")
-	print("Time test 3: {0} s".format(t2-t1))
-except:
-	print("Test 3: failure")
-
-# Test 4:
-# Toy Parameters with different d_K and l
-n=18
-t=10
-l=3
-r=3
-# so that h\simeq l**n\simeq (2r+1)**t
-d_K=-3
-
-try:
-	t1=time()
-	prot=OSIDH(n,t,l,r,d_K)
-	t2=time()
-	print("Test 4: success")
-	print("Time test 4: {0} s".format(t2-t1))
-except:
-	print("Test 4: failure")
-
-
-### Class Chain
-
-print("\nTesting class Chain")
-
-## Test 1: chain creation
-# Usual toy Parameters
-n=28
-t=10
-l=2
-r=3
-d_K=-4
-
-osidh=OSIDH(n,t,l,r,d_K)
-
+## Class Chain
+# Test 2: chain creation
 try:
 	t1=time()
 	C=Chain(osidh)
 	t2=time()
-	print("Test 1: success")
+	print("Test 2 (chain creation): success")
+	print("Time test 2: {0} s".format(t2-t1))
+except:
+	print("Test 2 (chain creation): failure")
+
+## q-action
+# Test 3: action on the chian by the smallest prime
+try:
+	mfq=gp.qfbprimeform(d_K,osidh.L_q[0])
+	t1=time()
+	D=C.action_prime(mfq,0)
+	t2=time()
+	print("Test 3 (q-action): success")
+	print("Time test 3: {0} s".format(t2-t1))
+except:
+	print("Test 3 (q-action): failure")
+
+# Test 4: action on the chian by the biggest prime
+try:
+	mfq=gp.qfbprimeform(d_K,osidh.L_q[t-1])
+	t1=time()
+	D=C.action_prime(mfq,t-1)
+	t2=time()
+	print("Test 4 (q-action): success")
+	print("Time test 4: {0} s".format(t2-t1))
+except:
+	print("Test 4 (q-action): failure")
+
+
+### Toy parameters with different l
+n=18
+t=10
+l=3
+r=3
+d_K=-4
+print("\nTesting with different l: n={0}, t={1}, l={2}, r={3}, d_K={4}".format(n,t,l,r,d_K))
+
+## Class OSIDH
+# Test 1: test __init__
+try:
+	t1=time()
+	osidh=OSIDH(n,t,l,r,d_K)
+	t2=time()
+	print("Test 1 (creation OSIDH): success")
 	print("Time test 1: {0} s".format(t2-t1))
 except:
-	print("Test 1: failure")
+	print("Test 1 (creation OSIDH): failure")
 
-mfq=gp.qfbprimeform(d_K,osidh.L_q[t-1])
-t1=time()
-#D=C.action_prime(mfq,t-1)
-#j=C.action_torsion(mfq,1)
-t2=time()
-print(t2-t1)
+## Class Chain
+# Test 2: chain creation
+try:
+	t1=time()
+	C=Chain(osidh)
+	t2=time()
+	print("Test 2 (chain creation): success")
+	print("Time test 2: {0} s".format(t2-t1))
+except:
+	print("Test 2 (chain creation): failure")
+
+## q-action
+# Test 3: action on the chian by the smallest prime
+try:
+	mfq=gp.qfbprimeform(d_K,osidh.L_q[0])
+	t1=time()
+	D=C.action_prime(mfq,0)
+	t2=time()
+	print("Test 3 (q-action): success")
+	print("Time test 3: {0} s".format(t2-t1))
+except:
+	print("Test 3 (q-action): failure")
+
+### Toy parameters with different d_K
+n=28
+t=10
+l=2
+r=3
+d_K=-3
+print("\nTesting with different d_K: n={0}, t={1}, l={2}, r={3}, d_K={4}".format(n,t,l,r,d_K))
+
+## Class OSIDH
+# Test 1: test __init__
+try:
+	t1=time()
+	osidh=OSIDH(n,t,l,r,d_K)
+	t2=time()
+	print("Test 1 (creation OSIDH): success")
+	print("Time test 1: {0} s".format(t2-t1))
+except:
+	print("Test 1 (creation OSIDH): failure")
+
+## Class Chain
+# Test 2: chain creation
+try:
+	t1=time()
+	C=Chain(osidh)
+	t2=time()
+	print("Test 2 (chain creation): success")
+	print("Time test 2: {0} s".format(t2-t1))
+except:
+	print("Test 2 (chain creation): failure")
+
+## q-action
+# Test 3: action on the chian by the smallest prime
+try:
+	mfq=gp.qfbprimeform(d_K,osidh.L_q[0])
+	t1=time()
+	D=C.action_prime(mfq,0)
+	t2=time()
+	print("Test 3 (q-action): success")
+	print("Time test 3: {0} s".format(t2-t1))
+except:
+	print("Test 3 (q-action): failure")
+
+### Toy parameters with different d_K and l
+n=18
+t=10
+l=3
+r=3
+d_K=-3
+print("\nTesting with different d_K and l: n={0}, t={1}, l={2}, r={3}, d_K={4}".format(n,t,l,r,d_K))
+
+## Class OSIDH
+# Test 1: test __init__
+try:
+	t1=time()
+	osidh=OSIDH(n,t,l,r,d_K)
+	t2=time()
+	print("Test 1 (creation OSIDH): success")
+	print("Time test 1: {0} s".format(t2-t1))
+except:
+	print("Test 1 (creation OSIDH): failure")
+
+## Class Chain
+# Test 2: chain creation
+try:
+	t1=time()
+	C=Chain(osidh)
+	t2=time()
+	print("Test 2 (chain creation): success")
+	print("Time test 2: {0} s".format(t2-t1))
+except:
+	print("Test 2 (chain creation): failure")
+
+## q-action
+# Test 3: action on the chian by the smallest prime
+try:
+	mfq=gp.qfbprimeform(d_K,osidh.L_q[0])
+	t1=time()
+	D=C.action_prime(mfq,0)
+	t2=time()
+	print("Test 3 (q-action): success")
+	print("Time test 3: {0} s".format(t2-t1))
+except:
+	print("Test 3 (q-action): failure")
+
+
+
