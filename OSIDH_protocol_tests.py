@@ -8,7 +8,6 @@ import pickle
 dirpath="Documents/Codes/OSIDH"
 
 ### Usual toy parameters 
-# Usual toy Parameters
 n=28
 t=10
 l=2

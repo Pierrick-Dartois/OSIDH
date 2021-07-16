@@ -383,6 +383,7 @@ class Chain:
 		L_E=[self.osidh.E0]
 		l=self.osidh.l
 		L_iso=[]
+		L_iso_dual=[]
 		for j in range(i):
 			# Torsion subgroup Ej[l]
 			Pj,Qj=Torsion_basis(a,p,L_E[-1],l,N,L_v[0])
@@ -396,9 +397,21 @@ class Chain:
 					T+=Pj
 					phij=L_E[-1].isogeny(T)
 					k+=1
-			L_E.append(phij.codomain())
+			
+			# Computing the dual isogeny of phij (since the sage dual method is very slow)
+			Ej1=phij.codomain()
+			Rj,Sj=phij(Pj),phij(Qj)
+			if Rj.is_zero():
+				phij_dual=Ej1.isogeny(Sj)
+			else:
+				phij_dual=Ej1.isogeny(Rj)
+			# Make sure that the codomain of phij_dual is the domain of phij
+			iso=phij_dual.codomain().isomorphism_to(L_E[-1])
+			phij_dual.set_post_isomorphism(iso)
+
 			L_iso.append(phij)
-		L_iso_dual=[phi.dual() for phi in L_iso]
+			L_iso_dual.append(phij_dual)
+			L_E.append(Ej1)
 
 		# Find lamb such that the idal associated to mfq = [q,theta-lamb]
 		# where theta generates the order O_K
