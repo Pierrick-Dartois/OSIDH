@@ -209,5 +209,19 @@ try:
 except:
 	print("Test 3 (q-action): failure")
 
+### Testing the whole protocol
+### Usual toy parameters 
+n=28
+t=10
+l=2
+r=3
+d_K=-4
+print("\nTesting OSIDH protocol with: n={0}, t={1}, l={2}, r={3}, d_K={4}".format(n,t,l,r,d_K))
+osidh=OSIDH(n,t,l,r,d_K)
+pub_chain=Chain(osidh)
 
+t1=time()
+OSIDH_exe(osidh,pub_chain)
+t2=time()
 
+print("OSIDH execution time: {0} s".format(t2-t1))

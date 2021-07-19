@@ -13,13 +13,34 @@ r=3
 d_K=-4
 
 osidh=OSIDH(n,t,l,r,d_K)
+L_q=osidh.L_q
+L_mfq=osidh.L_mfq
+L_mfq_inv=osidh.L_mfq_inv
 C=Chain(osidh)
-mfq=gp.qfbprimeform(d_K,osidh.L_q[t-1])
-t1=time()
-D=C.action_prime(mfq,t-1)
-t2=time()
-print(t2-t1)
-t1=time()
-j=C.action_torsion(mfq,t-1,n)
-t2=time()
-print(t2-t1)
+mfq0=L_mfq[0]
+mfq1=L_mfq[1]
+C=Chain(osidh)
+D=Chain(osidh,C.L_j.copy())
+for i in range(5):	
+	t1=time()
+	D=D.action_prime(mfq0,0)
+	t2=time()
+	print(t2-t1)
+for i in range(5):	
+	t1=time()
+	D=D.action_prime(mfq1,1)
+	t2=time()
+	print(t2-t1)
+
+E=Chain(osidh,C.L_j.copy())
+for i in range(5):	
+	t1=time()
+	E=E.action_prime(mfq1,1)
+	t2=time()
+	print(t2-t1)
+for i in range(5):	
+	t1=time()
+	E=E.action_prime(mfq0,0)
+	t2=time()
+	print(t2-t1)
+print(D.L_j==E.L_j)

@@ -179,6 +179,11 @@ class OSIDH:
 			q=next_prime(q)
 		self.L_q=L_q
 
+		# List of prime ideals lying above the primes of L_q in O_K 
+		# (represented as forms of discriminant d_K)
+		self.L_mfq=[gp.qfbprimeform(d_K,q) for q in L_q]
+		self.L_mfq_inv=[mfq**(-1) for mfq in self.L_mfq]
+
 		# Make sure that p is big enough to ensure that we con compute the chains efficiently
 		threshold=l**(2*n)*L_q[-1]*-d_K
 		while prod<threshold:
@@ -337,12 +342,12 @@ class Chain:
 				for g in phi_l:
 					L_eval.append(g(self.L_j[0]))
 				f=Fz(L_eval)
-				L_roots=f.roots()
+				L_roots=f.roots(multiplicities=False)
 				m=len(L_roots)
 				i=randint(0,m-1)
-				while L_roots[i][0]==self.L_j[0]:
+				while L_roots[i]==self.L_j[0]:
 					i=randint(0,m-1)
-				self.L_j.append(L_roots[i][0])
+				self.L_j.append(L_roots[i])
 
 				# Choice of the other j-invariants
 				k=2
@@ -351,12 +356,12 @@ class Chain:
 					for g in phi_l:
 						L_eval.append(g(self.L_j[k-1]))
 					f=Fz(L_eval)
-					L_roots=f.roots()
+					L_roots=f.roots(multiplicities=False)
 					m=len(L_roots)
 					i=randint(0,m-1)
-					while L_roots[i][0]==self.L_j[k-2]:
+					while L_roots[i]==self.L_j[k-2]:
 						i=randint(0,m-1)
-					self.L_j.append(L_roots[i][0])
+					self.L_j.append(L_roots[i])
 					k+=1
 
 	def action_torsion(self,mfq,ind_q,i):
@@ -417,7 +422,7 @@ class Chain:
 			L_iso_dual.append(phij_dual)
 			L_E.append(Ej1)
 
-		# Find lamb such that the idal associated to mfq = [q,theta-lamb]
+		# Find lamb such that the ideal associated to mfq = [q,theta-lamb]
 		# where theta generates the order O_K
 		q,b,c=get_abc(mfq)
 		if self.osidh.d_K==-3:
@@ -447,7 +452,7 @@ class Chain:
 		R=R1-lamb*R
 		S=S1-lamb*S
 
-		# Image of R, S by the isogeny chain E0 --> Ei
+		# Image of R, S by the isogeny chain E0 -->...--> Ei
 		for j in range(i):
 			R=L_iso[j](R)
 			S=L_iso[j](S)
@@ -456,12 +461,12 @@ class Chain:
 		if R.is_zero():
 			T=P
 		else:
-			U=S
+			U=R
 			k=1
-			while U!=R:
-				U+=S
+			while U!=S:
+				U+=R
 				k+=1
-			T=P-k*Q
+			T=Q-k*P
 
 		# Computing mfq*Ei:=Ei/<T>
 		phi=L_E[-1].isogeny(T)
@@ -501,10 +506,65 @@ class Chain:
 			L_roots=f.roots(multiplicities=False)
 			if len(L_roots)==1:
 				LF_j.append(L_roots[0])
-			else:
+			elif len(L_roots)>=2:
 				LF_j.append(self.action_torsion(mfq,ind_q,i+1))
+			else:
+				raise ValueError("Modular polynomials breakdown")
 
 		return Chain(self.osidh,LF_j)
+
+	def action(self,L_exp):
+		r"""Computes the action of an ideal of O_n written as a product of the mfq_j.
+
+		INPUT:
+
+		* L_exp: list of exponents in the interval [-r,r].
+
+		OUTPUT:
+
+		The chain obtained via the action of the ideal on self.
+		"""
+
+		out_chain=Chain(self.osidh,self.L_j.copy())# Deep copy of self
+		L_mfq=self.osidh.L_mfq
+		L_mfq_inv=self.osidh.L_mfq_inv
+
+		for j in range(self.osidh.t):
+			if L_exp[j]>=0:
+				for k in range(L_exp[j]):
+					out_chain=out_chain.action_prime(L_mfq[j],j)
+			else:
+				for k in range(-L_exp[j]):
+					out_chain=out_chain.action_prime(L_mfq_inv[j],j)
+		return out_chain
+
+## Protocol execution
+def OSIDH_exe(osidh,pub_chain):
+	# Alice's secret key
+	print("\nAlice:")
+	L_exp_A=[randint(-osidh.r,osidh.r) for j in range(osidh.t)]
+	print("Alice's secret key:")
+	print(L_exp_A)
+	chain_A=pub_chain.action(L_exp_A)	
+	print("Alice's action on public chain complete.")
+
+	# Bob's secret key
+	print("\nBob:")
+	L_exp_B=[randint(-osidh.r,osidh.r) for j in range(osidh.t)]
+	print("Bob's secret key:")
+	print(L_exp_B)
+	chain_B=pub_chain.action(L_exp_B)	
+	print("Bob's action on public chain complete.")
+
+	# Alice's computation on Bob's chain
+	chain_BA=chain_B.action(L_exp_A)
+	print("\nAlice's action on Bob's chain complete.")
+
+	# Bob's computation on Alice's chain
+	chain_AB=chain_A.action(L_exp_B)
+	print("\nBob's action on Alice's chain complete.")
+	
+	print("\nShared chains coincide: {0}".format(chain_AB.L_j==chain_BA.L_j))
 
 
 ## Obsolete functions: will be deleted soon
