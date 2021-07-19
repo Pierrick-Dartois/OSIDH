@@ -364,16 +364,15 @@ class Chain:
 					self.L_j.append(L_roots[i])
 					k+=1
 
-	def action_torsion(self,mfq,ind_q,i):
-		r"""Computes the action of the prime ideal represented by the form mfq at level i.
+	def action_torsion(self,ind_q,i):
+		r"""Computes the action of the prime ideal represented by the form 
+		mfq=self.osidh.L_mfq[ind_q] at level i.
 		Used to remove the ambiguity with the action by the conjugate of mfq at level i. 
 		Does not use modular polynomials.
 		
 		INPUT:
-
-		* mfq: form of discriminant d_K lying above a prime q.
 		
-		* ind_q: index of q in self.osidh.L_q.
+		* ind_q: index of mfq in self.osidh.L_mfq.
 
 		* i: level.
 
@@ -424,6 +423,7 @@ class Chain:
 
 		# Find lamb such that the ideal associated to mfq = [q,theta-lamb]
 		# where theta generates the order O_K
+		mfq=self.osidh.L_mfq[ind_q]
 		q,b,c=get_abc(mfq)
 		if self.osidh.d_K==-3:
 			lamb=(b-1)//2
@@ -472,22 +472,21 @@ class Chain:
 		phi=L_E[-1].isogeny(T)
 		return phi.codomain().j_invariant()
 
-	def action_prime(self,mfq,ind_q):
-		r"""Computes the action of the prime ideal represented by the form mfq on self using 
-		modular polynomial. Uses action_torsion in case of ambiguity.
+	def action_prime(self,ind_q):
+		r"""Computes the action of the prime ideal represented by the form mfq=self.osidh.L_mfq[ind_q] 
+		on self using modular polynomials. Uses action_torsion in case of ambiguity (when there are two
+		roots).
 
 		INPUT:
 
-		* mfq: form of discriminant d_K lying above a prime q.
-
-		* ind_q: index of q in self.osidh.L_q.
+		* ind_q: index of an ideal mfq in self.osidh.L_mfq.
 
 		OUTPUT:
 
-		The chain obtained via the action of mfq on self.
+		The chain obtained via the action of mfq=self.osidh.L_mfq[ind_q] on self.
 		"""
 
-		q=self.osidh.L_q[ind_q]
+		mfq=self.osidh.L_mfq[ind_q]
 		phi_l=self.osidh.L_phi[0]
 		phi_q=self.osidh.L_phi[ind_q+1]
 		Fz=self.osidh.Fz
@@ -507,7 +506,7 @@ class Chain:
 			if len(L_roots)==1:
 				LF_j.append(L_roots[0])
 			elif len(L_roots)>=2:
-				LF_j.append(self.action_torsion(mfq,ind_q,i+1))
+				LF_j.append(self.action_torsion(ind_q,i+1))
 			else:
 				raise ValueError("Modular polynomials breakdown")
 
@@ -532,11 +531,64 @@ class Chain:
 		for j in range(self.osidh.t):
 			if L_exp[j]>=0:
 				for k in range(L_exp[j]):
-					out_chain=out_chain.action_prime(L_mfq[j],j)
+					out_chain=out_chain.action_prime(j)
 			else:
 				for k in range(-L_exp[j]):
-					out_chain=out_chain.action_prime(L_mfq_inv[j],j)
+					out_chain=out_chain.action_prime(j)
 		return out_chain
+
+
+## Class of horizontal isogeny chains at the bottom for a given set of parameters
+class Chain_hor:
+	def __init__(self,osidh,ind_q,j_center,L_plus,L_minus):
+		r"""Instanciates a horizontal q-isogeny chain at the bottom for a given prime q.
+		
+		INPUT:
+
+		* osidh: An OSIDH object (instanciates general parameters).
+
+		* ind_q: index of q in osidh.L_q.
+
+		* j_center: central j-invariant of the chain.
+
+		* L_plus: list of j-invariants with positive exponents.
+		mfq*E-->...-->mfq^r*E
+
+		* L_minus: list of j-invariants with negative exponents.
+		mfq^-r*E-->...-->mfq^-1*E
+
+		OUTPUT: 
+
+		A horizontal q-isogeny chain.
+		"""
+
+		self.osidh=osidh
+		self.ind_q=ind_q
+		self.j_center=j_center
+		self.L_plus=L_plus
+		self.L_minus=L_minus
+
+	def action_step(self,ind_q,j,e):
+		r""" Computes the action of the prime ideal self.osidh.L_mfq(_inv)[ind_q]
+		relating self.j_center with j on the chain self up to exponent e.
+
+		INPUT:
+
+		* ind_q: index of the prime in osidh.L_q.
+
+		* j: j-invariant.
+
+		* e: exponent.
+
+		OUTPUT: 
+
+		The horizontal self.osidh.L_q[ind_q]-isogeny chain obtained by pusching the action
+		on self up to exponent e. 
+		"""
+
+		pass
+
+
 
 ## Protocol execution
 def OSIDH_exe(osidh,pub_chain):

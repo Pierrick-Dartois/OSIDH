@@ -62,9 +62,8 @@ except:
 ## q-action
 # Test 3: action on the chian by the smallest prime
 try:
-	mfq=gp.qfbprimeform(d_K,osidh.L_q[0])
 	t1=time()
-	D=C.action_prime(mfq,0)
+	D=C.action_prime(0)
 	t2=time()
 	print("Test 3 (q-action): success")
 	print("Time test 3: {0} s".format(t2-t1))
@@ -73,9 +72,8 @@ except:
 
 # Test 4: action on the chian by the biggest prime
 try:
-	mfq=gp.qfbprimeform(d_K,osidh.L_q[t-1])
 	t1=time()
-	D=C.action_prime(mfq,t-1)
+	D=C.action_prime(t-1)
 	t2=time()
 	print("Test 4 (q-action): success")
 	print("Time test 4: {0} s".format(t2-t1))
@@ -116,9 +114,8 @@ except:
 ## q-action
 # Test 3: action on the chian by the smallest prime
 try:
-	mfq=gp.qfbprimeform(d_K,osidh.L_q[0])
 	t1=time()
-	D=C.action_prime(mfq,0)
+	D=C.action_prime(0)
 	t2=time()
 	print("Test 3 (q-action): success")
 	print("Time test 3: {0} s".format(t2-t1))
@@ -158,9 +155,8 @@ except:
 ## q-action
 # Test 3: action on the chian by the smallest prime
 try:
-	mfq=gp.qfbprimeform(d_K,osidh.L_q[0])
 	t1=time()
-	D=C.action_prime(mfq,0)
+	D=C.action_prime(0)
 	t2=time()
 	print("Test 3 (q-action): success")
 	print("Time test 3: {0} s".format(t2-t1))
@@ -200,9 +196,8 @@ except:
 ## q-action
 # Test 3: action on the chian by the smallest prime
 try:
-	mfq=gp.qfbprimeform(d_K,osidh.L_q[0])
 	t1=time()
-	D=C.action_prime(mfq,0)
+	D=C.action_prime(0)
 	t2=time()
 	print("Test 3 (q-action): success")
 	print("Time test 3: {0} s".format(t2-t1))
