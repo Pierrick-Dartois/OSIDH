@@ -63,7 +63,7 @@ except:
 # Test 3: action on the chian by the smallest prime
 try:
 	t1=time()
-	D=C.action_prime(0)
+	D=C.action_prime(osidh.L_mfq[0],0)
 	t2=time()
 	print("Test 3 (q-action): success")
 	print("Time test 3: {0} s".format(t2-t1))
@@ -73,7 +73,7 @@ except:
 # Test 4: action on the chian by the biggest prime
 try:
 	t1=time()
-	D=C.action_prime(t-1)
+	D=C.action_prime(osidh.L_mfq[t-1],t-1)
 	t2=time()
 	print("Test 4 (q-action): success")
 	print("Time test 4: {0} s".format(t2-t1))
@@ -115,7 +115,7 @@ except:
 # Test 3: action on the chian by the smallest prime
 try:
 	t1=time()
-	D=C.action_prime(0)
+	D=C.action_prime(osidh.L_mfq[0],0)
 	t2=time()
 	print("Test 3 (q-action): success")
 	print("Time test 3: {0} s".format(t2-t1))
@@ -156,7 +156,7 @@ except:
 # Test 3: action on the chian by the smallest prime
 try:
 	t1=time()
-	D=C.action_prime(0)
+	D=C.action_prime(osidh.L_mfq[0],0)
 	t2=time()
 	print("Test 3 (q-action): success")
 	print("Time test 3: {0} s".format(t2-t1))
@@ -197,7 +197,7 @@ except:
 # Test 3: action on the chian by the smallest prime
 try:
 	t1=time()
-	D=C.action_prime(0)
+	D=C.action_prime(osidh.L_mfq[0],0)
 	t2=time()
 	print("Test 3 (q-action): success")
 	print("Time test 3: {0} s".format(t2-t1))
@@ -216,7 +216,7 @@ osidh=OSIDH(n,t,l,r,d_K)
 pub_chain=Chain(osidh)
 
 t1=time()
-OSIDH_exe(osidh,pub_chain)
+OSIDH_simple_exe(osidh,pub_chain)
 t2=time()
 
 print("OSIDH execution time: {0} s".format(t2-t1))
