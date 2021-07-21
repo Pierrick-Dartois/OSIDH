@@ -5,21 +5,6 @@ from time import time
 dirpath="Documents/Codes/OSIDH"
 
 ## Intermediary functions
-# Obsolete function: was used with bivariate polynomials
-def add(L):
-	r"""Intermediary function to add a list of polynomials and optimize addition cost 
-	(getting very heavy when there are a lot of coefficients without optimization).
-
-	INPUT: L: list of terms.
-
-	OUTPUT: sum of the terms in L.
-	"""
-
-	k=len(L)
-	if k==1:
-		return L[0]
-	else:
-		return add(L[0:k//2])+add(L[k//2::])
 
 def get_abc(q):
 	r"""
@@ -588,8 +573,8 @@ class Chain_hor:
 		on self up to exponent e. 
 		"""
 
-		phi_q1=self.osidh.L_phi[self.ind_q]# Modular polynomial of the chain self
-		phi_q2=self.osidh.L_phi[ind_q]# Modular polynomial of the action by self.osidh.L_q[ind_q]
+		phi_q1=self.osidh.L_phi[self.ind_q+1]# Modular polynomial of the chain self
+		phi_q2=self.osidh.L_phi[ind_q+1]# Modular polynomial of the action by self.osidh.L_mfq(_inv)[ind_q]
 		Fz=self.osidh.Fz
 
 		L_plus=[j]
@@ -625,7 +610,7 @@ class Chain_hor:
 				L_roots=f.roots(multiplicities=False)
 				L_minus.append(L_roots[0])
 				k+=1
-		return Chain_hor(osidh,self.ind_q,j,L_plus[1::],L_minus[1::])
+		return Chain_hor(self.osidh,self.ind_q,j,L_plus[1::],L_minus[1::])
 
 	def action_chain(self,chain,e,f):
 		r""" Given two chains:
@@ -702,7 +687,7 @@ def Action_hor(osidh,L_chains_hor,L_exp):
 	if L_exp[t-1]>0:
 		return L_chains_path[t-1].L_plus[L_exp[t-1]-1]
 	else:
-		return L_chains_path[t-1].L_minus[L_exp[t-1]-1]
+		return L_chains_path[t-1].L_minus[-L_exp[t-1]-1]
 
 ## Execution of the real OSIDH protocol
 def OSIDH_exe(osidh,pub_chain):
@@ -716,15 +701,15 @@ def OSIDH_exe(osidh,pub_chain):
 	for j in range(osidh.t):
 		chain=chain_A
 		L_plus=[]
-		for k in range(r):
+		for k in range(osidh.r):
 			chain=chain.action_prime(osidh.L_mfq[j],j)
 			L_plus.append(chain.L_j[-1])
 		chain=chain_A
 		L_minus=[]
-		for k in range(r):
+		for k in range(osidh.r):
 			chain=chain.action_prime(osidh.L_mfq_inv[j],j)
 			L_minus.append(chain.L_j[-1])
-		L_chains_hor_A.append(Chain_hor(j,chain_A.L_j[-1],L_plus,L_minus))
+		L_chains_hor_A.append(Chain_hor(osidh,j,chain_A.L_j[-1],L_plus,L_minus))
 	print("Alice's action on public chain complete.")
 
 	# Bob's secret key
@@ -737,26 +722,26 @@ def OSIDH_exe(osidh,pub_chain):
 	for j in range(osidh.t):
 		chain=chain_B
 		L_plus=[]
-		for k in range(r):
+		for k in range(osidh.r):
 			chain=chain.action_prime(osidh.L_mfq[j],j)
 			L_plus.append(chain.L_j[-1])
 		chain=chain_B
 		L_minus=[]
-		for k in range(r):
+		for k in range(osidh.r):
 			chain=chain.action_prime(osidh.L_mfq_inv[j],j)
 			L_minus.append(chain.L_j[-1])
-		L_chains_hor_B.append(Chain_hor(j,chain_B.L_j[-1],L_plus,L_minus))	
+		L_chains_hor_B.append(Chain_hor(osidh,j,chain_B.L_j[-1],L_plus,L_minus))	
 	print("Bob's action on public chain complete.")
 
 	# Alice's computation on Bob's chain
-	chain_BA=chain_B.action(L_exp_A)
-	print("\nAlice's action on Bob's chain complete.")
+	j_BA=Action_hor(osidh,L_chains_hor_B,L_exp_A)
+	print("\nAlice's action on Bob's data complete.")
 
 	# Bob's computation on Alice's chain
-	chain_AB=chain_A.action(L_exp_B)
-	print("\nBob's action on Alice's chain complete.")
+	j_AB=Action_hor(osidh,L_chains_hor_A,L_exp_B)
+	print("\nBob's action on Alice's data complete.")
 	
-	print("\nShared chains coincide: {0}".format(chain_AB.L_j==chain_BA.L_j))
+	print("\nShared chains coincide: {0}".format(j_AB==j_BA))
 
 
 ## Protocol execution of the simplest version of OSIDH
@@ -778,17 +763,33 @@ def OSIDH_simple_exe(osidh,pub_chain):
 	print("Bob's action on public chain complete.")
 
 	# Alice's computation on Bob's chain
-	j_BA=Action_hor(osidh,L_chains_hor_B,L_exp_A)
-	print("\nAlice's action on Bob's data complete.")
+	chain_BA=chain_B.action(L_exp_A)
+	print("\nAlice's action on Bob's chain complete.")
 
 	# Bob's computation on Alice's chain
-	j_AB=Action_hor(osidh,L_chains_hor_A,L_exp_B)
-	print("\nBob's action on Alice's data complete.")
+	chain_AB=chain_A.action(L_exp_B)
+	print("\nBob's action on Alice's chain complete.")
 	
-	print("\nShared chains coincide: {0}".format(j_AB==j_BA))
+	print("\nShared chains coincide: {0}".format(chain_AB.L_j==chain_BA.L_j))
 
 
 ## Obsolete functions: will be deleted soon
+# Obsolete function: was used with bivariate polynomials
+def add(L):
+	r"""Intermediary function to add a list of polynomials and optimize addition cost 
+	(getting very heavy when there are a lot of coefficients without optimization).
+
+	INPUT: L: list of terms.
+
+	OUTPUT: sum of the terms in L.
+	"""
+
+	k=len(L)
+	if k==1:
+		return L[0]
+	else:
+		return add(L[0:k//2])+add(L[k//2::])
+
 def Phi(R,q,x,y):
 	r"""
 	Returns the modular polynomial of level q modulo p (implicit prime).

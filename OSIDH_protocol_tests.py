@@ -216,7 +216,7 @@ osidh=OSIDH(n,t,l,r,d_K)
 pub_chain=Chain(osidh)
 
 t1=time()
-OSIDH_simple_exe(osidh,pub_chain)
+OSIDH_exe(osidh,pub_chain)
 t2=time()
 
 print("OSIDH execution time: {0} s".format(t2-t1))

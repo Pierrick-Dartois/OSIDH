@@ -13,34 +13,36 @@ r=3
 d_K=-4
 
 osidh=OSIDH(n,t,l,r,d_K)
-L_q=osidh.L_q
-L_mfq=osidh.L_mfq
-L_mfq_inv=osidh.L_mfq_inv
 C=Chain(osidh)
-mfq0=L_mfq[0]
-mfq1=L_mfq[1]
-C=Chain(osidh)
-D=Chain(osidh,C.L_j.copy())
-for i in range(5):	
-	t1=time()
-	D=D.action_prime(mfq0,0)
-	t2=time()
-	print(t2-t1)
-for i in range(5):	
-	t1=time()
-	D=D.action_prime(mfq1,1)
-	t2=time()
-	print(t2-t1)
 
-E=Chain(osidh,C.L_j.copy())
-for i in range(5):	
-	t1=time()
-	E=E.action_prime(mfq1,1)
-	t2=time()
-	print(t2-t1)
-for i in range(5):	
-	t1=time()
-	E=E.action_prime(mfq0,0)
-	t2=time()
-	print(t2-t1)
-print(D.L_j==E.L_j)
+t1=time()
+L_chains_hor=[]
+for j in range(0):
+	chain=C
+	L_plus=[]
+	for k in range(osidh.r):
+		chain=chain.action_prime(osidh.L_mfq[j],j)
+		L_plus.append(chain.L_j[-1])		
+	chain=C
+	L_minus=[]
+	for k in range(osidh.r):
+		chain=chain.action_prime(osidh.L_mfq_inv[j],j)
+		L_minus.append(chain.L_j[-1])
+	L_chains_hor.append(Chain_hor(osidh,j,chain.L_j[-1],L_plus,L_minus))
+t2=time()
+print("Time horizontal chains: {0} s".format(t2-t1))
+
+t1=time()
+#chain_test=L_chains_hor[0].action_step(1,L_chains_hor[1].L_plus[0],-3)
+t2=time()
+print("Time action_step: {0} s".format(t2-t1))
+
+t1=time()
+#chain_test=L_chains_hor[0].action_chain(L_chains_hor[1],-3,2)
+t2=time()
+print("Time action_chain: {0} s".format(t2-t1))
+
+t1=time()
+OSIDH_exe(osidh,C)
+t2=time()
+print("OSIDH execution time: {0} s".format(t2-t1))
