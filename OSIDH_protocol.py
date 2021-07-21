@@ -307,10 +307,7 @@ class Chain:
 
 		self.osidh=osidh
 		if len(L_j)>0:
-			if len(L_j)!=osidh.n+1:
-				raise ValueError("The list of j-invariant should have length n+1")
-			else:
-				self.L_j=L_j
+			self.L_j=L_j
 		else:
 			self.L_j=[]
 			if osidh.d_K==-3:
@@ -479,7 +476,7 @@ class Chain:
 		Fz=self.osidh.Fz
 
 		LF_j=[self.L_j[0]]
-		for i in range(self.osidh.n):
+		for i in range(len(self.L_j)-1):
 			L_eval=[]
 			for g in phi_l:
 				L_eval.append(g(LF_j[i]))
