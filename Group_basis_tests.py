@@ -148,6 +148,49 @@ if res==h:
 else:
 	print("Test 4: failure")
 
+##DL
+print("Testing DL")
+
+# Test 1: r=1, 2 factors
+G=AbelianGroup([2**5*3**4])
+g=G.gen()
+h=G.random_element()
+k=DL(G.one(),[g],h,[(2,5),(3,4)],1)
+if g**(k[0])==h:
+	print("Test 1: success")
+else:
+	print("Test 1: failure")
+
+# Test 2: r=2, 2 factors
+G=AbelianGroup([2**5*3**4,2**2*3**3])
+g0,g1=G.gens()
+h=G.random_element()
+k=DL(G.one(),[g0,g1],h,[(2,7),(3,7)],2)
+if g0**(k[0])*g1**(k[1])==h:
+	print("Test 2: success")
+else:
+	print("Test 2: failure")
+
+# Test 3: r=2, 4 factors
+G=AbelianGroup([2**5*3**4*7**5,2**2*3**3*13**14])
+g0,g1=G.gens()
+h=G.random_element()
+k=DL(G.one(),[g0,g1],h,[(2,7),(3,7),(7,5),(13,14)],2)
+if g0**(k[0])*g1**(k[1])==h:
+	print("Test 3: success")
+else:
+	print("Test 3: failure")
+
+# Test 4: r=1, 4 factors
+G=AbelianGroup([2**7*3**7*7**5*13**14])
+g=G.gen()
+h=G.random_element()
+k=DL(G.one(),[g],h,[(2,7),(3,7),(7,5),(13,14)],1)
+if g**(k[0])==h:
+	print("Test 4: success")
+else:
+	print("Test 4: failure")
+
 
 ## Basis_p
 print("Testing Basis_p: the tests are probabilistic so they may fail."

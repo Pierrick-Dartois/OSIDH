@@ -110,7 +110,7 @@ def DL_PH(e,B,h,p,r):
 
 	# Main Polling-Hellman loop
 	X=[0]*r
-	ri=0# Firts index such that L_sigma[ri]<=i
+	ri=0# First index such that L_sigma[ri]<=i
 	for i in range(sigma-1,-1,-1):
 		hi=H[i]
 		while ri<r and L_sigma[ri]>=i+1:
@@ -125,6 +125,48 @@ def DL_PH(e,B,h,p,r):
 	X_ret=[0]*r
 	for i in range(r):
 		X_ret[L_perm[i]]=X[i]
+	return X_ret
+
+def DL(e,B,h,L_factors,r):
+	r"""
+	Computes the discrete logarithm of h in basis B. We do not assume that we
+	are in a p-group here.
+
+	INPUT:
+
+	* e: neutral element of the group
+
+	* B: basis (list of group elements of length r)
+
+	* h: group element
+
+	* L_factors: list of factors of the group order in the form (prime, exponent) 
+
+	* r: length of B
+
+	OUTPUT:
+
+	Returns the discrete logarithm of h in the basis B.
+	"""
+
+	N=1
+	for factor in L_factors:
+		N*=factor[0]**factor[1]
+
+	L_DL=[]
+	for i in range(len(L_factors)):
+		Ni=N//(L_factors[i][0]**L_factors[i][1])
+		Bi=[g**Ni for g in B]
+		hi=h**Ni
+		L_DL.append(DL_PH(e,Bi,hi,L_factors[i][0],r))
+
+	X_ret=[]
+	moduli=[ZZ(factor[0]**factor[1]) for factor in L_factors]
+	for k in range(r):
+		vk=[]
+		for x in L_DL:
+			vk.append(x[k])
+		X_ret.append(CRT_list(vk,moduli))
 	return X_ret
 
 
@@ -473,7 +515,8 @@ def Lattice_basis(M,b):
 	m=lcm(b)
 	A=block_matrix(ZZ,[[(m//b[i])*L_A[i]] for i in range(r)])
 	A1=A.hermite_form()
-	return m*A1[0:t,0:t].inverse()
+	B=m*A1[0:t,0:t].inverse()
+	return B.change_ring(ZZ)
 
 
 def IsGoodLatticeBasis(B,M,b):
