@@ -645,7 +645,7 @@ class Chain_hor:
 		return chain_out
 
 
-def Action_hor(osidh,L_chains_hor,L_exp):
+def Action_hor_path(osidh,L_chains_hor,L_exp):
 	r"""Given the horizontal chains at the bottom and the exponents, this function performs the
 	action of the exponents on the central j-invariant of all the chains.
 
@@ -660,7 +660,11 @@ def Action_hor(osidh,L_chains_hor,L_exp):
 
 	OUTPUT:
 
-	Returns prod_{j=1}^t mfq_j^L_exp[j]*E_n.
+	Returns the list of chains:
+	E_n -->...-->mfq_0^e_0*E_n
+	mfq_0^e_0*E_n -->...-->mfq_0^e_0*mfq_1^e_1*E_n
+	...
+	mfq_0^e_0*...*mfq_{t-1}^e_{t-1}*E_n -->...-->mfq_0^e_0*...*mfq_t^e_t*E_n
 	"""
 	t=osidh.t
 	L_chains_path=[]
@@ -679,12 +683,34 @@ def Action_hor(osidh,L_chains_hor,L_exp):
 		for k in range(j):
 			chain=L_chains_path[k].action_chain(chain,L_exp[k],L_exp[j])
 		L_chains_path.append(chain)
+	return L_chains_path
+
+def Action_hor(osidh,L_chains_hor,L_exp):
+	r"""Given the horizontal chains at the bottom and the exponents, this function performs the
+	action of the exponents on the central j-invariant of all the chains.
+
+	INPUT:
+
+	* osidh: OSIDH instanciation.
+
+	* L_chains_hor: list of horizontal chains:
+	mfq_j^-r*E_n-->...-->E_n -->...-->mfq_0^e_0*E_n
+
+	* L_exp: list of exponents (integers in [-r,r])
+
+	OUTPUT:
+
+	Returns prod_{j=1}^t mfq_j^L_exp[j]*E_n.
+	"""
+	t=osidh.t
+	L_chains_path=Action_hor_path(osidh,L_chains_hor,L_exp)
 	if L_exp[t-1]==0:
 		return L_chains_path[t-1].j_center
 	if L_exp[t-1]>0:
 		return L_chains_path[t-1].L_plus[L_exp[t-1]-1]
 	else:
 		return L_chains_path[t-1].L_minus[-L_exp[t-1]-1]
+
 
 ## Execution of the real OSIDH protocol
 def OSIDH_exe(osidh,pub_chain):
