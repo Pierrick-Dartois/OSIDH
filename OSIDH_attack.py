@@ -59,8 +59,6 @@ def explore_level(L_exp,chain_pub,chain_ex,i,ind_gen,M_dl):
 
 	# Test the trivial case when there is no need to change anything
 	if action(chain_pub,i+1,L_exp)==chain_ex.L_j[i+1]:
-		print(i)
-		print("Simple case")
 		return L_exp
 
 	# Computing h_i1=#Cl(O_{i+1}) and h_i=#Cl(O_i), which is also 
@@ -96,12 +94,7 @@ def explore_level(L_exp,chain_pub,chain_ex,i,ind_gen,M_dl):
 		w=C.babai(v_target)
 		w=(IntegerMatrix.from_iterable(1, t, w)*B_red)[0]
 		L_exp_test=[v_target[i]-w[i] for i in range(osidh.t)]
-		print(L_exp_test)
-		print(action(chain_pub,i+1,L_exp_test))
-		print(action(chain_pub,i+1,v_target))
-		print(chain_ex.L_j[i+1])
 		if action(chain_pub,i+1,L_exp_test)==chain_ex.L_j[i+1]:
-			print(i)
 			return L_exp_test
 		k+=1
 
@@ -126,7 +119,7 @@ def attack_chain(chain_pub,chain_ex):
 	r=osidh.r
 	d_K=osidh.d_K
 	d=d_K*l**(2*n)
-	L_q=osidh.L_q
+	L_mfq=osidh.L_mfq
 
 	if d_K==-3:
 		h_1=(l-kronecker(d_K,l))//3
@@ -138,7 +131,10 @@ def attack_chain(chain_pub,chain_ex):
 
 	# Looking for the generator of Cl(O_n)
 	e=gp.qfbprimeform(d,1)
-	Q=[gp.qfbprimeform(d,q) for q in L_q]
+	Q=[]
+	for mfq in L_mfq:
+		a,b,c=get_abc(mfq)
+		Q.append(gp.qfbred(gp.Qfb(a,l**n*b,l**(2*n)*c)))
 	found_gen=False
 	ind_gen=0
 	while not found_gen:
@@ -162,7 +158,6 @@ def attack_chain(chain_pub,chain_ex):
 	L_exp=[0]*t
 	for i in range(n):
 		L_exp=explore_level(L_exp,chain_pub,chain_ex,i,ind_gen,M_dl)
-		print(L_exp)
 	return L_exp
 		
 
