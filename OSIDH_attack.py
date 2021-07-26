@@ -100,21 +100,26 @@ def explore_level(L_exp,chain_pub,chain_ex,i,ind_gen,M_dl):
 			return L_exp_test
 		k+=1
 
-def attack_chain(chain_pub,chain_ex):
-	r"""Computes the list of exponents e_1,..,e_t such that: 
-	(\prod_{j=1}^t \mfq_j^e_j)*chain_pub=chain_ex
-	Only works when Cl(O_n) is cyclic.
 
-	INPUT:
+def DL_vector_class(osidh):
+	r"""
+	Computes a generator of Cl(O_n) in osidh.L_mfq and the DL 
+	matrix (actually a line vector) of the primes of osidh.L_mfq 
+	in the basis of this generator. Only works when Cl(O_n) is 
+	cyclic.
 
-	* chain_pub, chain_ex: descending l-isogeny chains.
 
-	OUTPUT:
+	INPUT: 
 
-	The list of exponents [e_1,..,e_t].
+	* osidh: an oject of the class OSIDH.
+
+	OUTPUT: 
+
+	* ind_gen: index of the generator in osidh.L_mfq.
+
+	* M_dl: a 1*t integer matrix.
 	"""
 
-	osidh=chain_pub.osidh
 	l=osidh.l
 	n=osidh.n
 	t=osidh.t
@@ -154,6 +159,36 @@ def attack_chain(chain_pub,chain_ex):
 		else:
 			L_dl.append(DL(e,[Q[ind_gen]],Q[i],L_factors,1)[0])
 	M_dl=matrix(ZZ,L_dl)
+	
+	return ind_gen,M_dl
+
+
+def attack_chain(chain_pub,chain_ex,ind_gen="omitted",M_dl="omitted"):
+	r"""Computes the list of exponents e_1,..,e_t such that: 
+	(\prod_{j=1}^t \mfq_j^e_j)*chain_pub=chain_ex
+	Only works when Cl(O_n) is cyclic.
+
+	INPUT:
+
+	* chain_pub, chain_ex: descending l-isogeny chains.
+
+	* ind_gen: if not omitted, index of a generator of Cl(O_n) 
+	in the list of the \mfq_j.
+
+	* M_dl: if not omitted, the DL matrix of the \mfq_j in 
+	the basis [\mfq_{ind_gen}].
+
+	OUTPUT:
+
+	The list of exponents [e_1,..,e_t].
+	"""
+
+	osidh=chain_pub.osidh
+	n=osidh.n
+	t=osidh.t
+	
+	if ind_gen=="omitted":
+		ind_gen,M_dl=DL_vector_class(osidh)
 
 	# Main loop (upgrading the exponents sucessively 
 	#to match chain_ex at level i for i=1 to n)
@@ -238,7 +273,121 @@ def path_to_endo(L_path1,L_path2):
 
 	return L_iso
 
+def integral_part(osidh,L_exp,i):
+	r"""
+	Computes the integral part a of beta=a+l**i*b*theta\in O_i such that:
+	beta O_i=\prod_{j=1}^t(\mfq_j\cap O_i)^{L_exp[j]}
 
+	INPUT:
+
+	* osidh: an object of the class OSIDH.
+
+	* L_exp: list of exponents (integres).
+
+	* i: level (integer).
+
+	OUTPUT: returns a (integer).
+	"""
+
+	t=osidh.t
+	L_mfq=osidh.L_mfq
+	L_mfq_inv=osidh.L_mfq_inv
+	d_K=osidh.d_K
+	l=osidh.l
+
+	PQ=QQ['x']
+	x=PQ.gen()
+	L_ideals=[]
+	L_ideals_inv=[]
+	if d_K==-3:
+		K=NumberField(x**2+x+1,"theta")
+		theta=K.gen()
+		for j in range(t):
+			a,b,c=get_abc(L_mfq[j])
+			L_ideals.append(K.ideal([a,(1-b)//2+theta]))
+			a,b,c=get_abc(L_mfq_inv[j])
+			L_ideals_inv.append(K.ideal([a,(1-b)//2+theta]))
+	else:
+		K=NumberField(x**2+1,"theta")
+		theta=K.gen()
+		for j in range(t):
+			a,b,c=get_abc(L_mfq[j])
+			L_ideals.append(K.ideal([a,-b//2+theta]))
+			a,b,c=get_abc(L_mfq_inv[j])
+			L_ideals_inv.append(K.ideal([a,-b//2+theta]))
+
+	I=K.ideal(1)
+	for j in range(t):
+		if L_exp[j]>=0:
+			I*=L_ideals[j]**L_exp[j]
+		else:
+			I*=L_ideals_inv[j]**(-L_exp[j])
+
+	beta=I.gens_reduced()[0]
+	while beta[1]%(l**i)!=0:
+		beta*=theta
+
+	return beta[0]
+
+def chain_hor_up(chain_hor,j):
+	r"""Given the horizontal chain at level i:
+	mfq^-r*Ei-->...-->Ei-->...-->mfq^r*Ei
+	and the elliptic curve E{i-1} (represented by j).
+	This function computes the chain at level i-1:
+	mfq^-r*E{i-1}-->...-->E{i-1}-->...-->mfq^r*E{i-1}	
+	
+
+	INPUT:
+
+	* chain_hor: the horizontal chain:
+	mfq^-r*Ei-->...-->Ei-->...-->mfq^r*Ei
+
+	* j: the j-invariant of E{i-1}
+
+	OUTPUT: The horizontal chain:
+	mfq^-r*E{i-1}-->...-->E{i-1}-->...-->mfq^r*E{i-1}
+	"""
+
+	osidh=chain_hor.osidh
+	L_phi=osidh.L_phi
+	r=osidh.r
+	Fz=osidh.Fz
+
+	phi_l=L_phi[0]
+	phi_q=L_phi[chain_hor.ind_q+1]
+	
+	L_plus=[j]
+	L_minus=[j]
+
+	k=1
+	while k<=r:
+		L_eval=[]
+		for g in phi_l:
+			L_eval.append(g(chain_hor.L_plus[k-1]))
+		f_l=Fz(L_eval)
+		L_eval=[]
+		for g in phi_q:
+			L_eval.append(g(L_plus[-1]))
+		f_q=Fz(L_eval)
+		f=gcd(f_l,f_q)
+		L_roots=f.roots(multiplicities=False)
+		L_plus.append(L_roots[0])
+		k+=1
+	k=1
+	while k<=r:
+		L_eval=[]
+		for g in phi_l:
+			L_eval.append(g(chain_hor.L_minus[k-1]))
+		f_l=Fz(L_eval)
+		L_eval=[]
+		for g in phi_q:
+			L_eval.append(g(L_minus[-1]))
+		f_q=Fz(L_eval)
+		f=gcd(f_l,f_q)
+		L_roots=f.roots(multiplicities=False)
+		L_minus.append(L_roots[0])
+		k+=1
+	return Chain_hor(osidh,chain_hor.ind_q,j,L_plus[1::],L_minus[1::])
 
 
 def go_up_chain(L_chains_hor,M_dl,i,k_BKZ=4):
@@ -315,14 +464,78 @@ def go_up_chain(L_chains_hor,M_dl,i,k_BKZ=4):
 	L_iso=path_to_endo(L_path1,L_path2)
 	Ei=L_iso[0].domain()
 
+	# Computing a in the decomposition beta=a+b*l**i*theta
+	a=integral_part(osidh,u,i)
+
 	# Basis of Ei[l]
 	P,Q=Torsion_basis(a,p,Ei,l,N,v)
 	
-	# Computing 
+	# Computing iota_i(b*l**i*theta)(P,Q)
 	R,S=P,Q
 	for iso in L_iso:
 		R=iso(R)
 		S=iso(S)
+	R=R-a*P
+	S=S-a*Q
+
+	# Finding ker(iota_i(b*l**i*theta))\cap Ei[l](=ker(T) here)
+	if R.is_zero():
+		T=P
+	else:
+		T=Q
+		U=S
+		k=0
+		while not U.is_zero() and k<=q-1:
+			U+=R
+			T+=P
+			k+=1
+
+	# Computing E{i-1}
+	phi_dual=Ei.isogeny(T)
+	jim1=phi_dual.codomain().j_invariant()
+
+	# Computing the horizontal chains at level i-1
+	L_chains_hor_im1=[]
+	for j in range(t):
+		L_chains_hor_im1.append(chain_hor_up(L_chains_hor[j],jim1))
+	return L_chains_hor_im1
+
+def recover_chain(L_chains_hor):
+	r"""
+	Given the data of the horizontal chains at level n:
+	mfq_j^-r*En-->...-->En-->...-->mfq_j^r*En
+	This function recovers the whole descending l-isogeny chain:
+	E0-->...-->En
+
+	INPUT:
+
+	* L_chains_hor: List of horizontal chains.
+	
+	OUTPUT: The associated descending l-isogeny chain.
+	"""
+
+	
+	osidh=L_chains_hor[0].osidh
+	n=osidh.n
+
+	ind_gen,M_dl=DL_vector_class(osidh)
+
+	L_j=[L_chains_hor[0].j_center]
+	L_chains_hor_i=L_chains_hor
+
+	for i in range(n-1):
+		L_chains_hor_i=go_up_chain(L_chains_hor_i,M_dl,n-i)
+		L_j.append(L_chains_hor_i[0].j_center)
+	L_j.append(osidh.E0.j_invariant())
+
+	return Chain(osidh,L_j)
+
+
+
+
+
+
+
 
 
 
