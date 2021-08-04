@@ -204,7 +204,7 @@ def path_to_endo(L_path1,L_path2):
 	r"""
 	Given two lists of horizontal chains L_path1 and L_path2 giving two path:
 	phi1: E-->F and phi2: E-->F
-	this functions recover the chain of prime isogenies whose composite is the endomorphism:
+	this function recovers the chain of prime isogenies whose composite is the endomorphism:
 	hat{phi2}*phi1: E-->E
 
 	INPUT:
@@ -223,6 +223,8 @@ def path_to_endo(L_path1,L_path2):
 
 	# Choice of the first elliptic curve E
 	E=EllipticCurve(j=L_path1[0].j_center)
+	if E.cardinality()!=N:
+		E=E.quadratic_twist()
 	L_E=[E]#List of domains
 	L_iso=[]#List of isogenies
 
@@ -248,7 +250,7 @@ def path_to_endo(L_path1,L_path2):
 	# Path 2
 	t=len(L_path2)
 	for j in range(t):
-		chain_hor=L_chain2[t-1-j]
+		chain_hor=L_path2[t-1-j]
 		q=L_q[chain_hor.ind_q]
 		v=L_v[chain_hor.ind_q+1]
 		L_j=[chain_hor.j_center]+chain_hor.L_plus+chain_hor.L_minus
@@ -327,7 +329,7 @@ def integral_part(osidh,L_exp,i):
 	while beta[1]%(l**i)!=0:
 		beta*=theta
 
-	return beta[0]
+	return ZZ(beta[0])
 
 def chain_hor_up(chain_hor,j):
 	r"""Given the horizontal chain at level i:
@@ -442,15 +444,18 @@ def go_up_chain(L_chains_hor,M_dl,i,k_BKZ=4):
 		L_max.append(max(max(B_red[k]),-min(B_red[k])))
 	N_inf=min(L_max)
 	k0=L_max.index(N_inf)
-	u=M_red[k0]
+	u=B_red[k0]
 
 	# Dividing u into u=v1-v2 with \|v_i\|_\inf<=r
 	v1=[]
 	v2=[]
 	for k in range(t):
-		if u[k]>=0:
+		if u[k] in [-2*r,2*r]:
+			v1.append(u[k]//2)
+			v2.append(-u[k]//2)
+		elif u[k]>=0:
 			v1.append(r*(u[k]//r))
-			v2.append(-u[k]%r)
+			v2.append(-(u[k]%r))
 		else:
 			v1.append(-r*((-u[k])//r))
 			v2.append((-u[k])%r)
@@ -460,23 +465,24 @@ def go_up_chain(L_chains_hor,M_dl,i,k_BKZ=4):
 	L_path1=Action_hor_path(osidh,L_chains_hor,v1)
 	L_path2=Action_hor_path(osidh,L_chains_hor,v2)
 
+
 	# Computing the list of isogenies giving the desired endomorphism iota_i(beta):E-->E
 	L_iso=path_to_endo(L_path1,L_path2)
 	Ei=L_iso[0].domain()
 
-	# Computing a in the decomposition beta=a+b*l**i*theta
-	a=integral_part(osidh,u,i)
+	# Computing a in the decomposition beta=ai+bi*l**i*theta
+	ai=integral_part(osidh,u,i)
 
 	# Basis of Ei[l]
-	P,Q=Torsion_basis(a,p,Ei,l,N,v)
+	P,Q=Torsion_basis(a,p,Ei,l,N,L_v[0])
 	
-	# Computing iota_i(b*l**i*theta)(P,Q)
+	# Computing iota_i(bi*l**i*theta)(P,Q)
 	R,S=P,Q
 	for iso in L_iso:
 		R=iso(R)
 		S=iso(S)
-	R=R-a*P
-	S=S-a*Q
+	R=R-ai*P
+	S=S-ai*Q
 
 	# Finding ker(iota_i(b*l**i*theta))\cap Ei[l](=ker(T) here)
 	if R.is_zero():
@@ -524,9 +530,11 @@ def recover_chain(L_chains_hor):
 	L_chains_hor_i=L_chains_hor
 
 	for i in range(n-1):
+		print(i)
 		L_chains_hor_i=go_up_chain(L_chains_hor_i,M_dl,n-i)
 		L_j.append(L_chains_hor_i[0].j_center)
 	L_j.append(osidh.E0.j_invariant())
+	L_j.reverse()
 
 	return Chain(osidh,L_j)
 
