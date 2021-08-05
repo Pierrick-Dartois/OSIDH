@@ -4,10 +4,11 @@ from sage.all import *
 #import pickle
 from fpylll import *
 from time import time
+from sage.modules.free_module_integer import IntegerLattice
 from OSIDH_protocol import *
 from Group_basis import *
 
-### Part 1 - recovering the exponents when the descending l-isogeny chains are known
+### Part 2 - recovering the exponents when the descending l-isogeny chains are known
 
 def action(chain,i,L_exp):
 	r"""
@@ -198,7 +199,7 @@ def attack_chain(chain_pub,chain_ex,ind_gen="omitted",M_dl="omitted"):
 	return L_exp
 
 
-## Part 2 - recovering the descending l-isogeny chains with horizontal chains at level n
+### Part 1 - recovering the descending l-isogeny chains with horizontal chains at level n
 
 def path_to_endo(L_path1,L_path2):
 	r"""
@@ -275,10 +276,10 @@ def path_to_endo(L_path1,L_path2):
 
 	return L_iso
 
-def integral_part(osidh,L_exp,i):
+def generator_ideal(osidh,L_exp,i):
 	r"""
-	Computes the integral part a of beta=a+l**i*b*theta\in O_i such that:
-	beta O_i=\prod_{j=1}^t(\mfq_j\cap O_i)^{L_exp[j]}
+	Computes the coefficients a and b of beta=a+l**i*b*theta\in O_i such that:
+	beta*O_i=\prod_{j=1}^t(\mfq_j\cap O_i)^{L_exp[j]}
 
 	INPUT:
 
@@ -288,7 +289,7 @@ def integral_part(osidh,L_exp,i):
 
 	* i: level (integer).
 
-	OUTPUT: returns a (integer).
+	OUTPUT: returns a and b (integers).
 	"""
 
 	t=osidh.t
@@ -329,7 +330,7 @@ def integral_part(osidh,L_exp,i):
 	while beta[1]%(l**i)!=0:
 		beta*=theta
 
-	return ZZ(beta[0])
+	return ZZ(beta[0]),ZZ(beta[1])//(l**i)
 
 def chain_hor_up(chain_hor,j):
 	r"""Given the horizontal chain at level i:
@@ -392,7 +393,7 @@ def chain_hor_up(chain_hor,j):
 	return Chain_hor(osidh,chain_hor.ind_q,j,L_plus[1::],L_minus[1::])
 
 
-def go_up_chain(L_chains_hor,M_dl,i,k_BKZ=4):
+def go_up_chain(L_chains_hor,u,i):
 	r"""
 	Given the data of the horizontal chains at level i:
 	mfq_j^-r*Ei-->...-->Ei-->...-->mfq_j^r*Ei
@@ -404,12 +405,10 @@ def go_up_chain(L_chains_hor,M_dl,i,k_BKZ=4):
 
 	* L_chains_hor: List of horizontal chains.
 
-	* M_dl: matrix of the discrete logarithms of the \mfq_j in the basis [\mfq_{ind_gen}]
-	(in Cl(O_n)).
+	* u: short vector in the relations lattice of Cl(O_i) 
+	(of infinity norm <=2*r)
 
 	* i: level (integer >=1).
-
-	* k_BKZ: BKZ parameter to find a short vector (integer).
 
 	OUTPUT: List of horizontal chains at level n-1.
 	"""
@@ -425,26 +424,6 @@ def go_up_chain(L_chains_hor,M_dl,i,k_BKZ=4):
 	a=osidh.F.gen()
 	N=osidh.N
 	L_v=osidh.L_v
-
-	if d_K==-3:
-		h_1=(l-kronecker(d_K,l))//3
-		h_i=l**(i-1)*h_1
-	else:
-		h_1=(l-kronecker(d_K,l))//2
-		h_i=l**(i-1)*h_1
-
-
-	# Finding a short vector in the relations lattice
-	B=Lattice_basis(M_dl,[h_i])
-	B=IntegerMatrix.from_matrix(B).transpose()
-	B_red=BKZ.reduction(B, BKZ.Param(k_BKZ))
-
-	L_max=[]
-	for k in range(t):
-		L_max.append(max(max(B_red[k]),-min(B_red[k])))
-	N_inf=min(L_max)
-	k0=L_max.index(N_inf)
-	u=B_red[k0]
 
 	# Dividing u into u=v1-v2 with \|v_i\|_\inf<=r
 	v1=[]
@@ -465,13 +444,12 @@ def go_up_chain(L_chains_hor,M_dl,i,k_BKZ=4):
 	L_path1=Action_hor_path(osidh,L_chains_hor,v1)
 	L_path2=Action_hor_path(osidh,L_chains_hor,v2)
 
-
 	# Computing the list of isogenies giving the desired endomorphism iota_i(beta):E-->E
 	L_iso=path_to_endo(L_path1,L_path2)
 	Ei=L_iso[0].domain()
 
 	# Computing a in the decomposition beta=ai+bi*l**i*theta
-	ai=integral_part(osidh,u,i)
+	ai,bi=generator_ideal(osidh,u,i)
 
 	# Basis of Ei[l]
 	P,Q=Torsion_basis(a,p,Ei,l,N,L_v[0])
@@ -491,7 +469,7 @@ def go_up_chain(L_chains_hor,M_dl,i,k_BKZ=4):
 		T=Q
 		U=S
 		k=0
-		while not U.is_zero() and k<=q-1:
+		while not U.is_zero() and k<=l-1:
 			U+=R
 			T+=P
 			k+=1
@@ -522,35 +500,141 @@ def recover_chain(L_chains_hor):
 
 	
 	osidh=L_chains_hor[0].osidh
+	l=osidh.l
 	n=osidh.n
+	t=osidh.t
+	r=osidh.r
+	d_K=osidh.d_K
 
+	if d_K==-3:
+		h_1=(l-kronecker(d_K,l))//3
+	else:
+		h_1=(l-kronecker(d_K,l))//2
+
+	# Computing the relations lattices Li at each level i
+	# and a list of short vectors vi of Li such that vi not in L{i+1}
 	ind_gen,M_dl=DL_vector_class(osidh)
+
+	L_u=[]
+	for i in range(1,n+1):
+		h_i=h_1*l**(i-1)
+		B=Lattice_basis(M_dl,[h_i])
+		B=IntegerMatrix.from_matrix(B).transpose()
+		
+		bool_end=False
+		k_BKZ=4
+		while not bool_end:
+			B_red=BKZ.reduction(B, BKZ.Param(k_BKZ))
+			k=0
+			while (not bool_end) and k<=t-1:
+				u=B_red[k]
+				if max(max(u),-min(u))<=2*r:
+					a,b=generator_ideal(osidh,u,i)
+					if b%l!=0:
+						bool_end=True
+				k+=1
+			k_BKZ+=1
+		L_u.append(u)
 
 	L_j=[L_chains_hor[0].j_center]
 	L_chains_hor_i=L_chains_hor
 
-	for i in range(n-1):
-		print(i)
-		L_chains_hor_i=go_up_chain(L_chains_hor_i,M_dl,n-i)
+	for i in range(n):
+		L_chains_hor_i=go_up_chain(L_chains_hor_i,L_u[n-1-i],n-i)
 		L_j.append(L_chains_hor_i[0].j_center)
-	L_j.append(osidh.E0.j_invariant())
 	L_j.reverse()
 
 	return Chain(osidh,L_j)
 
 
+### Full attack
 
+def OSIDH_attack_exe(osidh,pub_chain):
+	print("Protocol execution:")
+	
+	t1=time()
+	# Alice's secret key
+	print("\nAlice:")
+	L_exp_A=[randint(-osidh.r,osidh.r) for j in range(osidh.t)]
+	print("Alice's secret key:")
+	print(L_exp_A)
+	chain_A=pub_chain.action(L_exp_A)
+	L_chains_hor_A=[]
+	for j in range(osidh.t):
+		chain=chain_A
+		L_plus=[]
+		for k in range(osidh.r):
+			chain=chain.action_prime(osidh.L_mfq[j],j)
+			L_plus.append(chain.L_j[-1])
+		chain=chain_A
+		L_minus=[]
+		for k in range(osidh.r):
+			chain=chain.action_prime(osidh.L_mfq_inv[j],j)
+			L_minus.append(chain.L_j[-1])
+		L_chains_hor_A.append(Chain_hor(osidh,j,chain_A.L_j[-1],L_plus,L_minus))
+	print("Alice's action on public chain complete.")
 
+	# Bob's secret key
+	print("\nBob:")
+	L_exp_B=[randint(-osidh.r,osidh.r) for j in range(osidh.t)]
+	print("Bob's secret key:")
+	print(L_exp_B)
+	chain_B=pub_chain.action(L_exp_B)
+	L_chains_hor_B=[]
+	for j in range(osidh.t):
+		chain=chain_B
+		L_plus=[]
+		for k in range(osidh.r):
+			chain=chain.action_prime(osidh.L_mfq[j],j)
+			L_plus.append(chain.L_j[-1])
+		chain=chain_B
+		L_minus=[]
+		for k in range(osidh.r):
+			chain=chain.action_prime(osidh.L_mfq_inv[j],j)
+			L_minus.append(chain.L_j[-1])
+		L_chains_hor_B.append(Chain_hor(osidh,j,chain_B.L_j[-1],L_plus,L_minus))	
+	print("Bob's action on public chain complete.")
 
+	# Alice's computation on Bob's chain
+	j_BA=Action_hor(osidh,L_chains_hor_B,L_exp_A)
+	print("\nAlice's action on Bob's data complete.")
 
+	# Bob's computation on Alice's chain
+	j_AB=Action_hor(osidh,L_chains_hor_A,L_exp_B)
+	print("\nBob's action on Alice's data complete.")
+	t2=time()
+	
+	print("\nShared chains coincide: {0}".format(j_AB==j_BA))
+	print("Protocol execution time: {0} s".format(t2-t1))
 
+	print("\nAttack: part 1 - recovering the chains of Alice and Bob")
 
+	t1=time()
+	print("\nAlice")
+	chain_A_recov=recover_chain(L_chains_hor_A)
+	print("Alice's chain recovered: {0}".format(chain_A_recov.L_j==chain_A.L_j))
 
+	print("\nBob")
+	chain_B_recov=recover_chain(L_chains_hor_B)
+	print("Bob's chain recovered: {0}".format(chain_B_recov.L_j==chain_B.L_j))
+	t2=time()
+	print("\nTiming part 1: {0} s".format(t2-t1))
 
+	print("\nAttack: part 2 - recovering Alice's secret exponents")
+	L_exp_A_attack=attack_chain(pub_chain,chain_A_recov)
+	t3=time()
 
+	print("\nTiming part 2: {0} s".format(t3-t2))
 
+	print("\nAttack: part 3 - recovering the shared secret chain")
 
+	chain_attacked=chain_B_recov.action(L_exp_A_attack)
+	t4=time()
 
+	print("Attack is correct: {0}".format(j_AB==chain_attacked.L_j[-1]))
+	print("Timing part 3: {0} s".format(t4-t3))
+
+	print("\nTotal attack timing : {0} s".format(t4-t1))
 
 
 
