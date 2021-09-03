@@ -550,6 +550,17 @@ def recover_chain(L_chains_hor):
 ### Full attack
 
 def OSIDH_attack_exe(osidh,pub_chain):
+	r"""Protocol and attack execution.
+
+	INPUT:
+
+	* osidh: instanciation of OSIDH (parameters).
+
+	* pub_chain: public descending l-isogeny chain used in the protocol.
+
+	OUTPUT: prints steps and execution times. Returns None.
+	"""
+
 	print("Protocol execution:")
 	
 	t1=time()
@@ -604,37 +615,154 @@ def OSIDH_attack_exe(osidh,pub_chain):
 	print("\nBob's action on Alice's data complete.")
 	t2=time()
 	
-	print("\nShared chains coincide: {0}".format(j_AB==j_BA))
+	print("\nShared j-invariants coincide: {0}".format(j_AB==j_BA))
 	print("Protocol execution time: {0} s".format(t2-t1))
 
-	print("\nAttack: part 1 - recovering the chains of Alice and Bob")
+	print("\nAttack: part 1 - recovering the Alice's chain")
 
 	t1=time()
-	print("\nAlice")
 	chain_A_recov=recover_chain(L_chains_hor_A)
 	print("Alice's chain recovered: {0}".format(chain_A_recov.L_j==chain_A.L_j))
-
-	print("\nBob")
-	chain_B_recov=recover_chain(L_chains_hor_B)
-	print("Bob's chain recovered: {0}".format(chain_B_recov.L_j==chain_B.L_j))
 	t2=time()
-	print("\nTiming part 1: {0} s".format(t2-t1))
+	print("Timing part 1: {0} s".format(t2-t1))
 
 	print("\nAttack: part 2 - recovering Alice's secret exponents")
 	L_exp_A_attack=attack_chain(pub_chain,chain_A_recov)
 	t3=time()
 
-	print("\nTiming part 2: {0} s".format(t3-t2))
+	print("Timing part 2: {0} s".format(t3-t2))
 
-	print("\nAttack: part 3 - recovering the shared secret chain")
+	print("\nAttack: part 3 - recovering the shared secret j-invariant")
 
-	chain_attacked=chain_B_recov.action(L_exp_A_attack)
+	j_attacked=Action_hor(osidh,L_chains_hor_B,L_exp_A_attack)
 	t4=time()
 
-	print("Attack is correct: {0}".format(j_AB==chain_attacked.L_j[-1]))
+	print("Attack is correct: {0}".format(j_AB==j_attacked))
 	print("Timing part 3: {0} s".format(t4-t3))
 
 	print("\nTotal attack timing : {0} s".format(t4-t1))
+
+def OSIDH_attack_stats(osidh,pub_chain,N_sample):
+	r"""Provides statistics on the execution times 
+	of the protocol and the attack.
+
+	INPUT:
+
+	* osidh: instanciation of OSIDH (parameters).
+
+	* pub_chain: public descending l-isogeny chain used in the protocol.
+
+	* N_sample: size of the sample to run the tests.
+
+	OUTPUT: samples, average and margin of error of the execution times of each step.
+	"""
+
+	L_protocol=[]
+	L_step1=[]
+	L_step2=[]
+	L_step3=[]
+	L_attack=[]
+
+	for run in range(N_sample):
+		## Protocol
+
+		t1=time()
+		# Alice's secret key
+		L_exp_A=[randint(-osidh.r,osidh.r) for j in range(osidh.t)]
+		chain_A=pub_chain.action(L_exp_A)
+		L_chains_hor_A=[]
+		for j in range(osidh.t):
+			chain=chain_A
+			L_plus=[]
+			for k in range(osidh.r):
+				chain=chain.action_prime(osidh.L_mfq[j],j)
+				L_plus.append(chain.L_j[-1])
+			chain=chain_A
+			L_minus=[]
+			for k in range(osidh.r):
+				chain=chain.action_prime(osidh.L_mfq_inv[j],j)
+				L_minus.append(chain.L_j[-1])
+			L_chains_hor_A.append(Chain_hor(osidh,j,chain_A.L_j[-1],L_plus,L_minus))
+
+		# Bob's secret key
+		L_exp_B=[randint(-osidh.r,osidh.r) for j in range(osidh.t)]
+		chain_B=pub_chain.action(L_exp_B)
+		L_chains_hor_B=[]
+		for j in range(osidh.t):
+			chain=chain_B
+			L_plus=[]
+			for k in range(osidh.r):
+				chain=chain.action_prime(osidh.L_mfq[j],j)
+				L_plus.append(chain.L_j[-1])
+			chain=chain_B
+			L_minus=[]
+			for k in range(osidh.r):
+				chain=chain.action_prime(osidh.L_mfq_inv[j],j)
+				L_minus.append(chain.L_j[-1])
+			L_chains_hor_B.append(Chain_hor(osidh,j,chain_B.L_j[-1],L_plus,L_minus))	
+
+		# Alice's computation on Bob's chain
+		j_BA=Action_hor(osidh,L_chains_hor_B,L_exp_A)
+
+		# Bob's computation on Alice's chain
+		j_AB=Action_hor(osidh,L_chains_hor_A,L_exp_B)
+		t2=time()
+
+		L_protocol.append(t2-t1)
+
+		## Attack
+		t1=time()
+		chain_A_recov=recover_chain(L_chains_hor_A)
+		t2=time()
+		L_step1.append(t2-t1)
+
+		L_exp_A_attack=attack_chain(pub_chain,chain_A_recov)
+		t3=time()
+		L_step2.append(t3-t2)
+
+		j_attacked=Action_hor(osidh,L_chains_hor_B,L_exp_A_attack)
+		t4=time()
+		L_step3.append(t4-t3)
+
+		L_attack.append(t4-t1)
+
+	mu_protocol=sum(L_protocol)/N_sample
+	mu_step1=sum(L_step1)/N_sample
+	mu_step2=sum(L_step2)/N_sample
+	mu_step3=sum(L_step3)/N_sample
+	mu_attack=sum(L_attack)/N_sample
+
+	s_protocol=0
+	for x in L_protocol:
+		s_protocol+=(x-mu_protocol)*(x-mu_protocol)
+	s_protocol/=N_sample-1
+	s_step1=0
+	for x in L_step1:
+		s_step1+=(x-mu_step1)*(x-mu_step1)
+	s_step1/=N_sample-1
+	s_step2=0
+	for x in L_step2:
+		s_step2+=(x-mu_step2)*(x-mu_step2)
+	s_step2/=N_sample-1
+	s_step3=0
+	for x in L_step3:
+		s_step3+=(x-mu_step3)*(x-mu_step3)
+	s_step3/=N_sample-1
+	s_attack=0
+	for x in L_attack:
+		s_attack+=(x-mu_attack)*(x-mu_attack)
+	s_attack/=N_sample-1
+
+	return L_protocol,L_step1,L_step2,L_step3,L_attack,mu_protocol,mu_step1,mu_step2,mu_step3,mu_attack,2*sqrt(s_protocol),2*sqrt(s_step1),2*sqrt(s_step2),2*sqrt(s_step3),2*sqrt(s_attack)
+
+
+
+
+
+
+
+
+
 
 
 
