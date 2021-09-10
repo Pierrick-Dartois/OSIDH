@@ -31,14 +31,13 @@ def action(chain,i,L_exp):
 	D=C.action(L_exp)
 	return D.L_j[-1]
 
-def explore_level(L_exp,chain_pub,chain_ex,i,ind_gen,M_dl):
+def explore_level(L_exp,chain_pub,chain_ex,i,DL_Q_B,M_dl):
 	r"""
 	Given the right exponents L_exp such that :
 
 	\prod_{j=1}^t \mfq_j^{L_exp[j]}*chain_pub=chain_ex up to level i
 
-	This function updates the list of exponent to match chain_ex up to level i+1. 
-	Only works when Cl(O_n) is cyclic.
+	This function updates the list of exponent to match chain_ex up to level i+1.
 
 	INPUT:
 
@@ -48,10 +47,11 @@ def explore_level(L_exp,chain_pub,chain_ex,i,ind_gen,M_dl):
 
 	* i: level.
 
-	* ind_gen: index of the generator of Cl(O_n) in osidh.L_mfq.
+	* DL_Q_B: the DL of elements of the basis B_group in Q", meaning that 
+	B_group[i]=\prod_{j=1}^t Q[j]**DL_Q_B[i][j].  
 
-	* M_dl: matrix of the discrete logarithms of the \mfq_j in the basis [\mfq_{ind_gen}]
-	(in Cl(O_n)) 
+	* M_dl: matrix of the discrete logarithms of the \mfq_j in the basis B_group
+	(in Cl(O_n)).
 
 	OUTPUT:
 
@@ -64,8 +64,7 @@ def explore_level(L_exp,chain_pub,chain_ex,i,ind_gen,M_dl):
 	if action(chain_pub,i+1,L_exp)==chain_ex.L_j[i+1]:
 		return L_exp
 
-	# Computing h_i1=#Cl(O_{i+1}) and h_i=#Cl(O_i), which is also 
-	# the exponent of the generator mfq_{ind_gen}^h_i  of Cl(O_{i+1})/Cl(O_i)
+	# Computing h_i1=#Cl(O_{i+1}) and h_i=#Cl(O_i)
 	osidh=chain_pub.osidh
 	l=osidh.l
 	t=osidh.t
@@ -77,38 +76,111 @@ def explore_level(L_exp,chain_pub,chain_ex,i,ind_gen,M_dl):
 		h_i=l**(max(i-1,0))*(l-kronecker(d_K,l))//2
 		h_i1=l**i*(l-kronecker(d_K,l))//2
 
-	# Computing the relations lattice of Cl(O_i) and LLL-reduction of the basis
-	B=Lattice_basis(M_dl,[h_i1])
-	B=IntegerMatrix.from_matrix(B).transpose()
-	B_red=LLL.reduction(B)
+	if len(B_group)==1:#Cyclic case
+		# Computing the relations lattice of Cl(O_{i+1}) and LLL-reduction of the basis
+		B=Lattice_basis(M_dl,[h_i1])
+		B=IntegerMatrix.from_matrix(B).transpose()
+		B_red=LLL.reduction(B)
 
-	# Cardinality of Cl(O_{i+1})/Cl(O_i)
-	if i==0:
-		k_max=h_i1//h_i
-	else:
+		# Cardinality of ker(Cl(O_{i+1})-->>Cl(O_i))
+		if i==0:
+			k_max=h_i1
+		else:
+			k_max=l
+
+		# Power of the generator
+		if i==0:
+			power=1
+		else:
+			power=h_i
+
+		k=1
+		v_target=L_exp.copy()
+		while k<k_max:
+			for j in range(t):
+				v_target[j]+=power*DL_Q_B[0][j]# B_group[0]**power generates ker(Cl(O_{i+1})-->>Cl(O_i))
+			C=GSO.Mat(copy(B_red))
+			C.update_gso()
+			w=C.babai(v_target)
+			w=(IntegerMatrix.from_iterable(1, t, w)*B_red)[0]
+			L_exp_test=[v_target[i]-w[i] for i in range(osidh.t)]
+			if action(chain_pub,i+1,L_exp_test)==chain_ex.L_j[i+1]:
+				return L_exp_test
+			k+=1
+	elif i>=2:#Non-cyclic case i>=2
+		# Computing the relations lattice of Cl(O_{i+1}) and LLL-reduction of the basis
+		B=Lattice_basis(M_dl,[h_i,l])
+		B=IntegerMatrix.from_matrix(B).transpose()
+		B_red=LLL.reduction(B)
+
+		# Cardinality of ker(Cl(O_{i+1})-->>Cl(O_i))
 		k_max=l
 
-	k=1
-	v_target=L_exp.copy()
-	while k<k_max:
-		v_target[ind_gen]+=h_i
-		C=GSO.Mat(copy(B_red))
-		C.update_gso()
-		w=C.babai(v_target)
-		w=(IntegerMatrix.from_iterable(1, t, w)*B_red)[0]
-		L_exp_test=[v_target[i]-w[i] for i in range(osidh.t)]
-		if action(chain_pub,i+1,L_exp_test)==chain_ex.L_j[i+1]:
-			return L_exp_test
-		k+=1
+		k=1
+		v_target=L_exp.copy()
+		while k<k_max:
+			for j in range(t):
+				v_target[j]+=h_i*DL_Q_B[0][j]# B_group[0]**h_i generates ker(Cl(O_{i+1})-->>Cl(O_i))
+			C=GSO.Mat(copy(B_red))
+			C.update_gso()
+			w=C.babai(v_target)
+			w=(IntegerMatrix.from_iterable(1, t, w)*B_red)[0]
+			L_exp_test=[v_target[i]-w[i] for i in range(osidh.t)]
+			if action(chain_pub,i+1,L_exp_test)==chain_ex.L_j[i+1]:
+				return L_exp_test
+			k+=1
+	elif i==1:#Non-cyclic case i=1
+		# Computing the relations lattice of Cl(O_2) and LLL-reduction of the basis
+		B=Lattice_basis(M_dl,[h_i,l])
+		B=IntegerMatrix.from_matrix(B).transpose()
+		B_red=LLL.reduction(B)
+
+		# Cardinality of ker(Cl(O_2)-->>Cl(O_1))
+		k_max=l
+
+		k=1
+		v_target=L_exp.copy()
+		while k<k_max:
+			for j in range(t):
+				v_target[j]+=DL_Q_B[1][j]# B_group[1] generates ker(Cl(O_2)-->>Cl(O_1))
+			C=GSO.Mat(copy(B_red))
+			C.update_gso()
+			w=C.babai(v_target)
+			w=(IntegerMatrix.from_iterable(1, t, w)*B_red)[0]
+			L_exp_test=[v_target[i]-w[i] for i in range(osidh.t)]
+			if action(chain_pub,i+1,L_exp_test)==chain_ex.L_j[i+1]:
+				return L_exp_test
+			k+=1
+	else:#Non-cyclic case i=0
+		# Computing the relations lattice of Cl(O_1) and LLL-reduction of the basis
+		B=Lattice_basis(M_dl,[h_i1,1])
+		B=IntegerMatrix.from_matrix(B).transpose()
+		B_red=LLL.reduction(B)
+
+		# Cardinality of ker(Cl(O_1)-->>Cl(O_K))
+		k_max=h_i1
+
+		k=1
+		v_target=L_exp.copy()
+		while k<k_max:
+			for j in range(t):
+				v_target[j]+=DL_Q_B[0][j]# B_group[0] generates ker(Cl(O_1)-->>Cl(O_K))
+			C=GSO.Mat(copy(B_red))
+			C.update_gso()
+			w=C.babai(v_target)
+			w=(IntegerMatrix.from_iterable(1, t, w)*B_red)[0]
+			L_exp_test=[v_target[i]-w[i] for i in range(osidh.t)]
+			if action(chain_pub,i+1,L_exp_test)==chain_ex.L_j[i+1]:
+				return L_exp_test
+			k+=1
 
 
-def DL_vector_class(osidh):
+
+
+def DL_matrix_class(osidh):
 	r"""
-	Computes a generator of Cl(O_n) in osidh.L_mfq and the DL 
-	matrix (actually a line vector) of the primes of osidh.L_mfq 
-	in the basis of this generator. Only works when Cl(O_n) is 
-	cyclic.
-
+	Computes a basis of Cl(O_n) in osidh.L_mfq and the DL 
+	matrix of the primes of osidh.L_mfq in this basis.
 
 	INPUT: 
 
@@ -116,9 +188,12 @@ def DL_vector_class(osidh):
 
 	OUTPUT: 
 
-	* ind_gen: index of the generator in osidh.L_mfq.
+	* B_group: basis, list of quadratic forms of disc d_K*l**(2*n)
 
-	* M_dl: a 1*t integer matrix.
+	* DL_Q_B: the DL of elements of B_group in Q", meaning that 
+	B_group[i]=\prod_{j=1}^t Q[j]**DL_Q_B[i][j].  
+
+	* M_dl: a (1 or 2)*t integer matrix.
 	"""
 
 	l=osidh.l
@@ -131,37 +206,21 @@ def DL_vector_class(osidh):
 
 	if d_K==-3:
 		h_1=(l-kronecker(d_K,l))//3
-		h_n=l**(n-1)*h_1
 	else:
 		h_1=(l-kronecker(d_K,l))//2
-		h_n=l**(n-1)*h_1
-	e_test=h_n//l
 
-	# Looking for the generator of Cl(O_n)
+	# List of prime ideals (represented as quadratic forms) in O_n
 	e=gp.qfbprimeform(d,1)
 	Q=[]
 	for mfq in L_mfq:
 		a,b,c=get_abc(mfq)
 		Q.append(gp.qfbred(gp.Qfb(a,l**n*b,l**(2*n)*c)))
-	found_gen=False
-	ind_gen=0
-	while not found_gen:
-		if Q[ind_gen]**e_test!=e:
-			found_gen=True
-		else:
-			ind_gen+=1
-
-	# Computing the DL of elements in Q in the basis of Q[ind_gen]
-	L_factors=[(l,n-1)]+list(factor(h_1))
-	L_dl=[]
-	for i in range(t):
-		if i==ind_gen:
-			L_dl.append(1)
-		else:
-			L_dl.append(DL(e,[Q[ind_gen]],Q[i],L_factors,1)[0])
-	M_dl=matrix(ZZ,L_dl)
 	
-	return ind_gen,M_dl
+	B_group,DL_Q_B=Basis_clg(e,Q,l,n,h_1)
+	L_factors=[(l,n-1)]+list(factor(h_1))
+	M_dl=DL_matrix(e,Q,B_group,L_factors)
+	
+	return B_group,DL_Q_B,M_dl
 
 
 def attack_chain(chain_pub,chain_ex,ind_gen="omitted",M_dl="omitted"):

@@ -296,28 +296,58 @@ if IsGoodDL_matrix(e,B,M,S):
 else:
 	print("Test 1: failure")
 
-## DL_matrix
-print("Testing DL_matrix and Basis_clg")
+## Test Basis_clg
+print("Testing Basis_clg")
 
-# Test 1: uses Test 1 of Basis
-M=DL_matrix(e,S,B,L_factors)
-if IsGoodDL_matrix(e,B,M,S):
-	print("Test 1 (DL_matrix): success")
+# Test 1: Cl(O_28) with d_K=-4
+G=AbelianGroup([2**27])
+L_factors=[(2,27)]
+e=G.one()
+S=[G.random_element() for i in range(50)]
+B,DL_S_B=Basis_clg(e,S,2,28,1)
+r=len(B)
+t=len(S)
+sucess=True
+for i in range(r):
+	g=e
+	for j in range(t):
+		g*=S[j]**DL_S_B[i][j]
+	if g!=B[i]:
+		sucess=False
+if sucess:
+	print("Test 1: success")
 else:
-	print("Test 1 (DL_matrix): failure")
+	print("Test 1: failure")
 
-# Test 2: with Basis_clg Cl(O_28) for d_K=-11
+# Test 2: Cl(O_28) with d_K=-11
 G=AbelianGroup([2,3*2**26])
 L_factors=[(3,1),(2,27)]
 e=G.one()
 S=[G.random_element() for i in range(50)]
-# Find a generator of the second component Z/(3*2**26)Z
-B=Basis_clg(e,S,2,28,3)
+B,DL_S_B=Basis_clg(e,S,2,28,3)
+r=len(B)
+t=len(S)
+sucess=True
+for i in range(r):
+	g=e
+	for j in range(t):
+		g*=S[j]**DL_S_B[i][j]
+	if g!=B[i]:
+		sucess=False
+if sucess:
+	print("Test 2: success")
+else:
+	print("Test 2: failure")
+
+## Test DL_matrix
+print("Testing DL_matrix")
+
+# Test 1: with test 2 of Basis_clg
 M=DL_matrix(e,S,B,L_factors)
 if IsGoodDL_matrix(e,B,M,S):
-	print("Test 2 (DL_matrix and Basis_clg): success")
+	print("Test 1: success")
 else:
-	print("Test 2 (DL_matrix and Basis_clg): failure")
+	print("Test 1: failure")
 
 ## Lattice basis
 print("Testing lattice basis (test 2 may fail)")
