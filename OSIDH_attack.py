@@ -37,7 +37,7 @@ def explore_level(L_exp,chain_pub,chain_ex,i,ind_gen,M_dl):
 
 	\prod_{j=1}^t \mfq_j^{L_exp[j]}*chain_pub=chain_ex up to level i
 
-	This functions updates the list of exponent to match chain_ex up to level i+1. 
+	This function updates the list of exponent to match chain_ex up to level i+1. 
 	Only works when Cl(O_n) is cyclic.
 
 	INPUT:
@@ -618,13 +618,18 @@ def OSIDH_attack_exe(osidh,pub_chain):
 	print("\nShared j-invariants coincide: {0}".format(j_AB==j_BA))
 	print("Protocol execution time: {0} s".format(t2-t1))
 
-	print("\nAttack: part 1 - recovering the Alice's chain")
+	print("\nAttack: part 1 - recovering Alice's and Bob's chains")
 
 	t1=time()
 	chain_A_recov=recover_chain(L_chains_hor_A)
 	print("Alice's chain recovered: {0}".format(chain_A_recov.L_j==chain_A.L_j))
+	t1_bis=time()
+	print("Time: {0} s".format(t1_bis-t1))
+	chain_B_recov=recover_chain(L_chains_hor_B)
+	print("Bob's chain recovered: {0}".format(chain_B_recov.L_j==chain_B.L_j))
 	t2=time()
-	print("Timing part 1: {0} s".format(t2-t1))
+	print("Time: {0} s".format(t2-t1_bis))
+	print("Total timing part 1: {0} s".format(t2-t1))
 
 	print("\nAttack: part 2 - recovering Alice's secret exponents")
 	L_exp_A_attack=attack_chain(pub_chain,chain_A_recov)
@@ -632,12 +637,12 @@ def OSIDH_attack_exe(osidh,pub_chain):
 
 	print("Timing part 2: {0} s".format(t3-t2))
 
-	print("\nAttack: part 3 - recovering the shared secret j-invariant")
+	print("\nAttack: part 3 - recovering the shared secret chain")
 
-	j_attacked=Action_hor(osidh,L_chains_hor_B,L_exp_A_attack)
+	chain_attacked=chain_B_recov.action(L_exp_A_attack)
 	t4=time()
 
-	print("Attack is correct: {0}".format(j_AB==j_attacked))
+	print("Attack is correct: {0}".format(j_AB==chain_attacked.L_j[-1]))
 	print("Timing part 3: {0} s".format(t4-t3))
 
 	print("\nTotal attack timing : {0} s".format(t4-t1))
@@ -654,16 +659,20 @@ def OSIDH_attack_stats(osidh,pub_chain,N_sample):
 
 	* N_sample: size of the sample to run the tests.
 
-	OUTPUT: samples, average and margin of error of the execution times of each step.
+	OUTPUT: samples of the execution times of each step.
 	"""
 
+	L_keys_A=[]
+	L_keys_B=[]
 	L_protocol=[]
-	L_step1=[]
+	L_step1a=[]
+	L_step1b=[]
 	L_step2=[]
 	L_step3=[]
 	L_attack=[]
 
 	for run in range(N_sample):
+		print("Sample number {0}".format(run))
 		## Protocol
 
 		t1=time()
@@ -709,52 +718,29 @@ def OSIDH_attack_stats(osidh,pub_chain,N_sample):
 		t2=time()
 
 		L_protocol.append(t2-t1)
+		L_keys_A.append(L_exp_A)
+		L_keys_B.append(L_exp_B)
 
 		## Attack
 		t1=time()
 		chain_A_recov=recover_chain(L_chains_hor_A)
+		t1_bis=time()
+		chain_B_recov=recover_chain(L_chains_hor_B)
 		t2=time()
-		L_step1.append(t2-t1)
 
 		L_exp_A_attack=attack_chain(pub_chain,chain_A_recov)
 		t3=time()
-		L_step2.append(t3-t2)
 
-		j_attacked=Action_hor(osidh,L_chains_hor_B,L_exp_A_attack)
+		chain_attacked=chain_B_recov.action(L_exp_A_attack)
 		t4=time()
+		
+		L_step1a.append(t1_bis-t1)
+		L_step1b.append(t2-t1_bis)
+		L_step2.append(t3-t2)
 		L_step3.append(t4-t3)
-
 		L_attack.append(t4-t1)
 
-	mu_protocol=sum(L_protocol)/N_sample
-	mu_step1=sum(L_step1)/N_sample
-	mu_step2=sum(L_step2)/N_sample
-	mu_step3=sum(L_step3)/N_sample
-	mu_attack=sum(L_attack)/N_sample
-
-	s_protocol=0
-	for x in L_protocol:
-		s_protocol+=(x-mu_protocol)*(x-mu_protocol)
-	s_protocol/=N_sample-1
-	s_step1=0
-	for x in L_step1:
-		s_step1+=(x-mu_step1)*(x-mu_step1)
-	s_step1/=N_sample-1
-	s_step2=0
-	for x in L_step2:
-		s_step2+=(x-mu_step2)*(x-mu_step2)
-	s_step2/=N_sample-1
-	s_step3=0
-	for x in L_step3:
-		s_step3+=(x-mu_step3)*(x-mu_step3)
-	s_step3/=N_sample-1
-	s_attack=0
-	for x in L_attack:
-		s_attack+=(x-mu_attack)*(x-mu_attack)
-	s_attack/=N_sample-1
-
-	return L_protocol,L_step1,L_step2,L_step3,L_attack,mu_protocol,mu_step1,mu_step2,mu_step3,mu_attack,2*sqrt(s_protocol),2*sqrt(s_step1),2*sqrt(s_step2),2*sqrt(s_step3),2*sqrt(s_attack)
-
+	return L_keys_A,L_keys_B,L_protocol,L_step1a,L_step1b,L_step2,L_step3,L_attack
 
 
 

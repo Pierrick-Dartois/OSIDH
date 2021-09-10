@@ -1,17 +1,25 @@
 import sys
-sys.path.append('Documents/Codes/OSIDH')
+#sys.path.append('Documents/Codes/OSIDH')
 from Group_basis import *
 from sage.all import *
 from time import time
 
-# General parameters (OSIDH, p. 29)
+# General parameters (Colo and Kohel, OSIDH, Section 6)
 n=256
 t=74
 l=2
-d_K=-4
+d_K=-4#-3 or -4
 f=l**n
 d=d_K*f**2
-h=l**(n-1)# Class number
+
+# Class number
+h=l**(n-1)
+if d_K==-3:
+	h*=(l-kronecker(d_K,l))//3
+else:
+	h*=(l-kronecker(d_K,l))//2
+# Exponent in the non cyclic case
+h_nm1=h//l
 
 L_q=[]
 q=3
@@ -24,13 +32,29 @@ for j in range(t):
 e=gp.qfbprimeform(d,1)
 Q=[gp.qfbprimeform(d,q) for q in L_q]
 
+## Step 1: find a basis
 t1=time()
-B,L_orders=Basis(e,Q,h,[(l,n-1)])
+#B,L_orders=Basis(e,Q,h,[(l,n-1)]) 
+# Using this function takes too much time and is unnecessary here, see below
+
+# The product has order equal to the exponent
+g1=e
+for mfq in Q:
+	g1*=mfq
+if g1**h_nm1!=e:
+	B=[g1]
+	L_orders=[]
+
+
 t2=time()
 print("Time Basis: {0} s".format(str(t2-t1)))
+
+## Step 2: compute the matrix of discrete logarithms in this basis
 M=DL_matrix(e,Q,B,L_orders)
 t3=time()
 print("Time DL_matrix: {0} s".format(str(t3-t2)))
+
+## Step 3: compute a basis of the relations lattice
 b=[x[0]**x[1] for x in L_orders]
 C=Lattice_basis(M,b)
 t4=time()
@@ -42,7 +66,7 @@ print("Total Time: {0} s".format(str(t4-t1)))
 # Getting the coefficients of the quadratic forms appearing in B
 def get_abc(q):
 	r"""
-	Computing the coefficients a, b, c of a qudratic form in pari type.
+	Computing the coefficients a, b, c of a quadratic form in pari type.
 
 	INPUT: a pari/gp object gen representing a binary quadratic form (Qfb).
 

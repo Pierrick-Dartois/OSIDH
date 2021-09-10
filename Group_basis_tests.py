@@ -286,22 +286,44 @@ else:
 	print("Test 1: failure")
 
 
-## DL_matrix
-print("Testing DL_matrix")
+## DL_matrix_sylow
+print("Testing DL_matrix_sylow")
 
 # Test 1: uses Test 1 of Basis
-M=DL_matrix(e,S,B,L_orders)
+M=DL_matrix_sylow(e,S,B,L_orders)
 if IsGoodDL_matrix(e,B,M,S):
 	print("Test 1: success")
 else:
 	print("Test 1: failure")
 
+## DL_matrix
+print("Testing DL_matrix and Basis_clg")
+
+# Test 1: uses Test 1 of Basis
+M=DL_matrix(e,S,B,L_factors)
+if IsGoodDL_matrix(e,B,M,S):
+	print("Test 1 (DL_matrix): success")
+else:
+	print("Test 1 (DL_matrix): failure")
+
+# Test 2: with Basis_clg Cl(O_28) for d_K=-11
+G=AbelianGroup([2,3*2**26])
+L_factors=[(3,1),(2,27)]
+e=G.one()
+S=[G.random_element() for i in range(50)]
+# Find a generator of the second component Z/(3*2**26)Z
+B=Basis_clg(e,S,2,28,3)
+M=DL_matrix(e,S,B,L_factors)
+if IsGoodDL_matrix(e,B,M,S):
+	print("Test 2 (DL_matrix and Basis_clg): success")
+else:
+	print("Test 2 (DL_matrix and Basis_clg): failure")
 
 ## Lattice basis
 print("Testing lattice basis (test 2 may fail)")
 
-# Test 1 : on the group of test 1 of Basis
-b=[x[0]**x[1] for x in L_orders]
+# Test 1 : on the group of test 2 of DL_matrix
+b=[3*2**26,2]
 B=Lattice_basis(M,b)
 if IsGoodLatticeBasis(B,M,b):
 	print("Test 1: success")
