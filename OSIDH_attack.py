@@ -10,6 +10,7 @@ from Group_basis import *
 
 ### Part 2 - recovering the exponents when the descending l-isogeny chains are known
 
+
 def action(chain,i,L_exp):
 	r"""
 	Computes the action of \prod_{j=1}^t \mfq_j^{L_exp[j]} on chain up to level i.
@@ -47,8 +48,8 @@ def explore_level(L_exp,chain_pub,chain_ex,i,DL_Q_B,M_dl):
 
 	* i: level.
 
-	* DL_Q_B: the DL of elements of the basis B_group in Q", meaning that 
-	B_group[i]=\prod_{j=1}^t Q[j]**DL_Q_B[i][j].  
+	* DL_Q_B: "the DL of elements of the basis B_group in L_mfq (generators mfq_j)", 
+	meaning that B_group[i]=\prod_{j=1}^t L_mfq[j]**DL_Q_B[i][j].  
 
 	* M_dl: matrix of the discrete logarithms of the \mfq_j in the basis B_group
 	(in Cl(O_n)).
@@ -76,7 +77,7 @@ def explore_level(L_exp,chain_pub,chain_ex,i,DL_Q_B,M_dl):
 		h_i=l**(max(i-1,0))*(l-kronecker(d_K,l))//2
 		h_i1=l**i*(l-kronecker(d_K,l))//2
 
-	if len(B_group)==1:#Cyclic case
+	if len(DL_Q_B)==1:#Cyclic case
 		# Computing the relations lattice of Cl(O_{i+1}) and LLL-reduction of the basis
 		B=Lattice_basis(M_dl,[h_i1])
 		B=IntegerMatrix.from_matrix(B).transpose()
@@ -107,7 +108,7 @@ def explore_level(L_exp,chain_pub,chain_ex,i,DL_Q_B,M_dl):
 			if action(chain_pub,i+1,L_exp_test)==chain_ex.L_j[i+1]:
 				return L_exp_test
 			k+=1
-	elif i>=2:#Non-cyclic case i>=2
+	elif i>=3:#Non-cyclic case i>=3
 		# Computing the relations lattice of Cl(O_{i+1}) and LLL-reduction of the basis
 		B=Lattice_basis(M_dl,[h_i,l])
 		B=IntegerMatrix.from_matrix(B).transpose()
@@ -115,12 +116,38 @@ def explore_level(L_exp,chain_pub,chain_ex,i,DL_Q_B,M_dl):
 
 		# Cardinality of ker(Cl(O_{i+1})-->>Cl(O_i))
 		k_max=l
+		power=h_i//l
 
 		k=1
 		v_target=L_exp.copy()
 		while k<k_max:
 			for j in range(t):
-				v_target[j]+=h_i*DL_Q_B[0][j]# B_group[0]**h_i generates ker(Cl(O_{i+1})-->>Cl(O_i))
+				v_target[j]+=power*DL_Q_B[0][j]# B_group[0]**power generates ker(Cl(O_{i+1})-->>Cl(O_i))
+			C=GSO.Mat(copy(B_red))
+			C.update_gso()
+			w=C.babai(v_target)
+			w=(IntegerMatrix.from_iterable(1, t, w)*B_red)[0]
+			L_exp_test=[v_target[i]-w[i] for i in range(osidh.t)]
+			if action(chain_pub,i+1,L_exp_test)==chain_ex.L_j[i+1]:
+				return L_exp_test
+			k+=1
+	elif i==2:#Non-cyclic case i=2
+		# Computing the relations lattice of Cl(O_3) and LLL-reduction of the basis
+		B=Lattice_basis(M_dl,[h_i,l])
+		B=IntegerMatrix.from_matrix(B).transpose()
+		B_red=LLL.reduction(B)
+
+		# Cardinality of ker(Cl(O_3)-->>Cl(O_2))
+		k_max=l
+
+		# DL of the generator of ker(Cl(O_3)-->>Cl(O_2)) in L_mfq
+		DL_Q_gen=ker32(osidh,DL_Q_B)
+
+		k=1
+		v_target=L_exp.copy()
+		while k<k_max:
+			for j in range(t):
+				v_target[j]+=DL_Q_gen[j]
 			C=GSO.Mat(copy(B_red))
 			C.update_gso()
 			w=C.babai(v_target)
@@ -174,8 +201,61 @@ def explore_level(L_exp,chain_pub,chain_ex,i,DL_Q_B,M_dl):
 				return L_exp_test
 			k+=1
 
+def ker32(osidh,DL_Q_B):
+	r"""
+	Computes a generator of ker(Cl(O_3)-->>Cl(O_2)) in the non-cyclic case.
 
+	INPUT:
 
+	* osidh: OSIDH instanciation.
+
+	* DL_Q_B: "the DL of elements of the basis B_group of Cl(O_3) in L_mfq (generators mfq_j)", 
+	meaning that B_group[i]=\prod_{j=1}^t L_mfq[j]**DL_Q_B[i][j]. 
+
+	OUTPUT:
+
+	* DL_Q_gen: DL of a generator of ker(Cl(O_3)-->>Cl(O_2)) in L_mfq (generators mfq_j).
+	"""
+
+	l=osidh.l
+	t=osidh.t
+	d_K=osidh.d_K
+	d2=d_K*l**4
+	#d3=d2*l**2
+	L_mfq=osidh.L_mfq
+
+	# Computing h_1=#Cl(O_1)
+	if d_K==-3:
+		h_1=(l-kronecker(d_K,l))//3
+	else:
+		h_1=(l-kronecker(d_K,l))//2
+
+	# Computing the image of the basis in Cl(O_2)
+	e=gp.qfbprimeform(d2,1)
+	g0=e
+	g1=e
+	for j in range(t):
+		if DL_Q_B[0][j]!=0 or DL_Q_B[1][j]!=0:
+			a,b,c=get_abc(L_mfq[j])
+			mfq2=gp.qfbred(gp.Qfb(a,l**2*b,l**(2*2)*c))
+			g0*=mfq2**DL_Q_B[0][j]
+			g1*=mfq2**DL_Q_B[1][j]
+
+	# We have ker(Cl(O_3)-->>Cl(O_2))=<g0^{ah_1}g1^b>, so we compute a and b in {0...l-1}
+	h0=g0**h_1
+	if h0==e:# ker=<h0>
+		return [h_1*x for x in DL_Q_B[0]]
+	elif g1==e:# ker=<g1>
+		return DL_Q_B[1]
+	else:
+		a=1
+		while h0**a!=g1 and a<l:
+			a+=1
+		DL_Q_gen=[0]*t
+		for j in range(t):
+			DL_Q_gen[j]=a*h_1*DL_Q_B[0][j]-DL_Q_B[1][j]
+		return DL_Q_gen
+	
 
 def DL_matrix_class(osidh):
 	r"""
@@ -188,10 +268,8 @@ def DL_matrix_class(osidh):
 
 	OUTPUT: 
 
-	* B_group: basis, list of quadratic forms of disc d_K*l**(2*n)
-
-	* DL_Q_B: the DL of elements of B_group in Q", meaning that 
-	B_group[i]=\prod_{j=1}^t Q[j]**DL_Q_B[i][j].  
+	* DL_Q_B: "the DL of elements of the basis B_group in L_mfq (generators mfq_j)", 
+	meaning that B_group[i]=\prod_{j=1}^t L_mfq[j]**DL_Q_B[i][j].  
 
 	* M_dl: a (1 or 2)*t integer matrix.
 	"""
@@ -220,10 +298,10 @@ def DL_matrix_class(osidh):
 	L_factors=[(l,n-1)]+list(factor(h_1))
 	M_dl=DL_matrix(e,Q,B_group,L_factors)
 	
-	return B_group,DL_Q_B,M_dl
+	return DL_Q_B,M_dl
 
 
-def attack_chain(chain_pub,chain_ex,ind_gen="omitted",M_dl="omitted"):
+def attack_chain(chain_pub,chain_ex,DL_Q_B="omitted",M_dl="omitted"):
 	r"""Computes the list of exponents e_1,..,e_t such that: 
 	(\prod_{j=1}^t \mfq_j^e_j)*chain_pub=chain_ex
 	Only works when Cl(O_n) is cyclic.
@@ -232,11 +310,11 @@ def attack_chain(chain_pub,chain_ex,ind_gen="omitted",M_dl="omitted"):
 
 	* chain_pub, chain_ex: descending l-isogeny chains.
 
-	* ind_gen: if not omitted, index of a generator of Cl(O_n) 
-	in the list of the \mfq_j.
+	* DL_Q_B: the DL of elements of the basis B_group in L_mfq (generatos mfq_j)", 
+	meaning that B_group[i]=\prod_{j=1}^t L_mfq[j]**DL_Q_B[i][j].  
 
 	* M_dl: if not omitted, the DL matrix of the \mfq_j in 
-	the basis [\mfq_{ind_gen}].
+	the basis B_group.
 
 	OUTPUT:
 
@@ -247,14 +325,14 @@ def attack_chain(chain_pub,chain_ex,ind_gen="omitted",M_dl="omitted"):
 	n=osidh.n
 	t=osidh.t
 	
-	if ind_gen=="omitted":
-		ind_gen,M_dl=DL_vector_class(osidh)
+	if DL_Q_B=="omitted":
+		DL_Q_B,M_dl=DL_matrix_class(osidh)
 
 	# Main loop (upgrading the exponents sucessively 
 	#to match chain_ex at level i for i=1 to n)
 	L_exp=[0]*t
 	for i in range(n):
-		L_exp=explore_level(L_exp,chain_pub,chain_ex,i,ind_gen,M_dl)
+		L_exp=explore_level(L_exp,chain_pub,chain_ex,i,DL_Q_B,M_dl)
 	return L_exp
 
 
@@ -572,12 +650,22 @@ def recover_chain(L_chains_hor):
 
 	# Computing the relations lattices Li at each level i
 	# and a list of short vectors vi of Li such that vi not in L{i+1}
-	ind_gen,M_dl=DL_vector_class(osidh)
+	DL_Q_B,M_dl=DL_matrix_class(osidh)
+	if len(DL_Q_B)==1:
+		cyclic=True
+	else:
+		cyclic=False
 
 	L_u=[]
 	for i in range(1,n+1):
 		h_i=h_1*l**(i-1)
-		B=Lattice_basis(M_dl,[h_i])
+		if cyclic:
+			B=Lattice_basis(M_dl,[h_i])
+		else:
+			if i==1:
+				B=Lattice_basis(M_dl,[h_i,1])
+			else:
+				B=Lattice_basis(M_dl,[h_i//l,l])
 		B=IntegerMatrix.from_matrix(B).transpose()
 		
 		bool_end=False
