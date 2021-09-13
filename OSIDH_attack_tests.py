@@ -1,5 +1,3 @@
-import sys
-sys.path.append("Documents/Codes/OSIDH")
 from sage.all import *
 from time import time
 from OSIDH_protocol import *

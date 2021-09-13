@@ -1,7 +1,4 @@
-import sys
-sys.path.append("Documents/Codes/OSIDH")
 from sage.all import *
-#import pickle
 from fpylll import *
 from time import time
 from sage.modules.free_module_integer import IntegerLattice
@@ -157,7 +154,7 @@ def explore_level(L_exp,chain_pub,chain_ex,i,DL_Q_B,M_dl):
 				return L_exp_test
 			k+=1
 	else:#Non-cyclic case i=0,1
-		DL_Q_geni,M_dli=DL_matrix_small(osidh,i)
+		DL_Q_geni,M_dli=DL_matrix_small(osidh,i+1)
 
 		# k_max=#ker(Cl(O_{i+1})-->>Cl(O_i))
 		# ker(Cl(O_{i+1})-->>Cl(O_i))=<gen^power>

@@ -1,5 +1,4 @@
 import sys
-sys.path.append('Documents/Codes/OSIDH')
 from Class_group import *
 from sage.all import *
 

@@ -1,11 +1,8 @@
-import sys
-sys.path.append("Documents/Codes/OSIDH")
+import os
 from sage.all import *
 from OSIDH_protocol import *
 from time import time
 import pickle
-
-dirpath="Documents/Codes/OSIDH"
 
 ### Usual toy parameters 
 n=28
@@ -30,7 +27,8 @@ except:
 # Test 1-bis: pickling
 try:
 	t1=time()
-	osidh.save(dirpath+"/pickle_OSIDH.txt")
+	filename=os.path.join("Data_files","pickle_OSIDH.txt")
+	osidh.save(filename)
 	t2=time()
 	print("Test 1-bis (pickling): success")
 	print("Time test 1-bis: {0} s".format(t2-t1))
@@ -40,7 +38,8 @@ except:
 # Test 1-ter: unpickling
 try:
 	t1=time()
-	with open(dirpath+"/pickle_OSIDH.txt","rb") as f:
+	filename=os.path.join("Data_files","pickle_OSIDH.txt")
+	with open(filename,"rb") as f:
 		osidh=pickle.load(f)
 	t2=time()
 	print("Test 1-ter (unpickling): success")

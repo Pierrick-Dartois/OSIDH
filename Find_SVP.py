@@ -1,10 +1,10 @@
-import sys
-sys.path.append('Documents/Codes/OSIDH')
+import os
 from sage.all import *
 from fpylll import *
 from time import time
 
-with open("Documents/Codes/OSIDH/Data_files/Relations_lattice_basis.txt","r",encoding="utf-8") as f:
+file_open=os.path.join("Data_files","Relations_lattice_basis.txt")
+with open(file_open,"r",encoding="utf-8") as f:
 	L=f.readlines()
 	i0=1
 	while L[i0]!="Lattice basis\n":
@@ -45,8 +45,9 @@ print("Infinity norm of the shortest vector: {0}".format(N_inf))
 print("Shortest vector:")
 print(u)
 
-# Saving the LLL/BKZ matrix (outputted lattice vectors are rows, unlike entry lattice vectors of M given in columns) 
-with open("Documents/Codes/OSIDH/Data_files/Lattice_BKZ_4.txt","w",encoding="utf-8") as f:
+# Saving the LLL/BKZ matrix (outputted lattice vectors are rows, unlike entry lattice vectors of M given in columns)
+file_save=os.path.join("Data_files","Lattice_BKZ_4.txt") 
+with open(file_save,"w",encoding="utf-8") as f:
 	f.write("Infinity norm of the shortest vector:\n")
 	f.write(str(N_inf)+"\n")
 	f.write("Index of the shortest vector:\n")
