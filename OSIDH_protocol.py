@@ -94,7 +94,7 @@ def Torsion_basis(a,p,E,q,N,v):
 			P=m*RandomECElt(a,p,E)
 
 		Q=m*RandomECElt(a,p,E)
-		while P.weil_pairing(Q,q).is_one():
+		while P.weil_pairing(Q,ZZ(q)).is_one():
 			Q=m*RandomECElt(a,p,E)
 	else:
 		P=m*RandomECElt(a,p,E)
@@ -112,7 +112,7 @@ def Torsion_basis(a,p,E,q,N,v):
 		while not Q1.is_zero():
 			Q=Q1
 			Q1=q*Q1
-		while P.weil_pairing(Q,q).is_one():
+		while P.weil_pairing(Q,ZZ(q)).is_one():
 			Q=m*RandomECElt(a,p,E)
 			# Make sure that Q has order q
 			Q1=q*Q

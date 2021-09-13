@@ -7,51 +7,52 @@ from OSIDH_attack import *
 
 ## Cyclic case
 # Parameters
-n=15# To shorten the attack
+n=28
 t=10
 l=2
 r=3
 d_K=-4
-print("Test cyclic case: l={0}, d_K={1}".format(l,d_K))
+print("Test cyclic case: l={0}, d_K={1}\n".format(l,d_K))
 
 osidh=OSIDH(n,t,l,r,d_K)
 pub_chain=Chain(osidh)
-L_exp=[randint(-osidh.r,osidh.r) for j in range(osidh.t)]
-chain_ex=pub_chain.action(L_exp)
-L_exp_attack=attack_chain(pub_chain,chain_ex)
-chain_ex_attack=pub_chain.action(L_exp_attack)
-print("Attack is correct: {0}".format(chain_ex_attack.L_j==chain_ex.L_j))
+OSIDH_attack_exe(osidh,pub_chain)
 
 ## Non cyclic case
 # Parameters
-n=15# To shorten the attack
+n=28
 t=10
 l=2
 r=3
 d_K=-3
-print("Test non-cyclic case: l={0}, d_K={1}".format(l,d_K))
+print("\nTest non-cyclic case: l={0}, d_K={1}\n".format(l,d_K))
 
 osidh=OSIDH(n,t,l,r,d_K)
 pub_chain=Chain(osidh)
-L_exp=[randint(-osidh.r,osidh.r) for j in range(osidh.t)]
-chain_ex=pub_chain.action(L_exp)
-L_exp_attack=attack_chain(pub_chain,chain_ex)
-chain_ex_attack=pub_chain.action(L_exp_attack)
-print("Attack is correct: {0}".format(chain_ex_attack.L_j==chain_ex.L_j))
+OSIDH_attack_exe(osidh,pub_chain)
 
-## Cyclic case, different l
+## Cyclic case, different l (d_K=-3)
 # Parameters
-n=15# To shorten the attack
+n=18
 t=10
 l=3
 r=3
 d_K=-3
-print("Cyclic case: l={0}, d_K={1}".format(l,d_K))
+print("\nCyclic case: l={0}, d_K={1}\n".format(l,d_K))
 
 osidh=OSIDH(n,t,l,r,d_K)
 pub_chain=Chain(osidh)
-L_exp=[randint(-osidh.r,osidh.r) for j in range(osidh.t)]
-chain_ex=pub_chain.action(L_exp)
-L_exp_attack=attack_chain(pub_chain,chain_ex)
-chain_ex_attack=pub_chain.action(L_exp_attack)
-print("Attack is correct: {0}".format(chain_ex_attack.L_j==chain_ex.L_j))
+OSIDH_attack_exe(osidh,pub_chain)
+
+## Cyclic case, different l (d_K=-4)
+# Parameters
+n=12
+t=10
+l=5
+r=3
+d_K=-4
+print("\nCyclic case: l={0}, d_K={1}\n".format(l,d_K))
+
+osidh=OSIDH(n,t,l,r,d_K)
+pub_chain=Chain(osidh)
+OSIDH_attack_exe(osidh,pub_chain)
