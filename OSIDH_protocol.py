@@ -714,6 +714,17 @@ def Action_hor(osidh,L_chains_hor,L_exp):
 
 ## Execution of the real OSIDH protocol
 def OSIDH_exe(osidh,pub_chain):
+	r"""This procedure runs OSIDH.
+
+	INPUT:
+
+	* osidh: OSIDH instanciation.
+
+	* pub_chain: public descending l-isogeny chain.
+
+	OUTPUT: None. Prints the logs of the protocol execution.
+	"""
+
 	# Alice's secret key
 	print("\nAlice:")
 	L_exp_A=[randint(-osidh.r,osidh.r) for j in range(osidh.t)]
@@ -769,6 +780,18 @@ def OSIDH_exe(osidh,pub_chain):
 
 ## Protocol execution of the simplest version of OSIDH
 def OSIDH_simple_exe(osidh,pub_chain):
+	r"""This procedure runs the naive Diffie-Hellman key exchange
+	that gave birth to OSIDH.
+
+	INPUT:
+
+	* osidh: OSIDH instanciation.
+
+	* pub_chain: public descending l-isogeny chain.
+
+	OUTPUT: None. Prints the logs of the protocol execution.
+	"""
+
 	# Alice's secret key
 	print("\nAlice:")
 	L_exp_A=[randint(-osidh.r,osidh.r) for j in range(osidh.t)]
